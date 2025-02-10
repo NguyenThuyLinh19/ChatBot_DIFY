@@ -1,29 +1,17 @@
 const express = require('express');
+const cors = require('cors');
+require('dotenv').config();  // Đọc biến môi trường từ file .env
+const authRoutes = require('./controller/authController'); // Đường dẫn đến các controller
+
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 5000;
 
-// Middleware để xử lý dữ liệu JSON trong POST request
-app.use(express.json());
+app.use(cors()); // Cấu hình CORS
+app.use(express.json()); // Middleware để xử lý body request dạng JSON
 
-//dinh nghia mot route co ban GET
-app.get('/', (req, res) => {
-    res.send('day la API cua THUYLYINK');
-});
+// Các route liên quan đến đăng ký và đăng nhập
+app.use('/api/auth', authRoutes);
 
-//dinh nghia mot route GET de tra ve du lien JSON
-app.get('/api/data', (req, res) => {
-    res.json({ message: 'Day la du lieu tu API' });
-});
-
-//dinh nghia mot route post de nhan va tra du lieu
-app.post('/api/data', (req, res) => {
-    const requestData = req.body;
-    res.json({
-        message: 'Du lieu da nhan',
-        receivedData: requestData,
-    });
-});
-
-app.listen(port, () => {
-    console.log(`Server dang chay tai http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });

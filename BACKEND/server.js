@@ -1,17 +1,48 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();  // Đọc biến môi trường từ file .env
-const authRoutes = require('./controller/authController'); // Đường dẫn đến các controller
+require("dotenv").config();
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+app.use(cors());
+app.use(express.json());
 
-app.use(cors()); // Cấu hình CORS
-app.use(express.json()); // Middleware để xử lý body request dạng JSON
+const DIFY_API_URL = "https://api.dify.ai/v1";
+const DIFY_API_KEY = process.env.DIFY_API_KEY;
 
-// Các route liên quan đến đăng ký và đăng nhập
-app.use('/api/auth', authRoutes);
+// Tạo chatbot mới
+app.post("/create-chatbot", async (req, res) => {
+    try {
+        const { name, description } = req.body;
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+        const response = await axios.post(`${DIFY_API_URL}/apps`,
+            {
+                name,
+                description,
+                type: "chatbot",
+            }, {
+            headers: { "Authorization": `Bearer ${DIFY_API_KEY}` }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Nhận danh sách chatbot
+app.get("/chatbots", async (req, res) => {
+    try {
+        const response = await axios.get(`${DIFY_API_URL}/apps`, {
+            headers: { "Authorization": `Bearer ${DIFY_API_KEY}` }
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.listen(5000, () => {
+    console.log("Server running on port 5000");
 });

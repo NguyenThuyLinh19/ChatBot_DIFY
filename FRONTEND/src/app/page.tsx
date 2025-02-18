@@ -26,7 +26,7 @@ export default function HomePage() {
           </p>
           <Link href="/login">
             <button className="mt-6 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600">
-              Bắt đầu ngay
+              Tạo chatbot
             </button>
           </Link>
         </div>

@@ -9,12 +9,15 @@ const authRoutes = require('./routes/auth.routes');
 const chatbotRoutes = require('./routes/chatbot.routes');
 const chatSessionRoutes = require('./routes/chatSession.routes');
 const messageRoutes = require('./routes/message.routes');
-
+const chatRouters = require('./routes/chat.routes')
 const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000', // Chỉ định origin cụ thể của frontend
+    credentials: true,               // Cho phép gửi credentials (cookie, authorization header, TLS client certificate)
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -24,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chatbots', chatbotRoutes);
 app.use('/api/chat-sessions', chatSessionRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/chat', chatRouters);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

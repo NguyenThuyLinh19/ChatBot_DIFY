@@ -1,4 +1,8 @@
 const Chatbots = require('../models/chatbot.model');
+require("dotenv").config();
+
+const DIFY_API_CHAT = process.env.DIFY_API_CHAT;
+
 
 class ChatbotController {
     // Tạo chatbot mới
@@ -61,6 +65,76 @@ class ChatbotController {
             res.json({ message: 'Chatbot deleted successfully' });
         } catch (error) {
             res.status(500).json({ message: error.message });
+        }
+    }
+
+    async ChatDify(req, res) {
+        try {
+            // Lấy token từ header
+            const dify_token = req.headers.authorization?.split(" ")[1];
+
+            if (!dify_token) {
+                return res.status(401).json({ error: 'Unauthorized: Missing token' });
+            }
+
+            // Lấy dữ liệu từ body request
+            const { message, session_id } = req.body;
+            if (!message) {
+                return res.status(400).json({ error: 'Message is required' });
+            }
+
+            // Gọi API Dify
+            const response = await fetch(DIFY_API_CHAT, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${dify_token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    inputs: '',
+                    model_config: {},
+                    query: message,
+                    response_mode: 'streaming',
+                }),
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                return res.status(response.status).json({ error: errorText });
+            }
+
+            // Xử lý streaming response từ Dify
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let chunks = []; // Mảng chứa từng phần dữ liệu
+
+            async function readStream() {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+
+                    // Phân tách dữ liệu theo dòng (mỗi dòng chứa một JSON)
+                    const lines = chunk.split("\n").filter(line => line.trim() !== "");
+
+                    lines.forEach(line => {
+                        try {
+                            // Parse JSON từng dòng và lưu vào mảng
+                            const jsonData = JSON.parse(line.replace(/^data: /, ""));
+                            chunks.push(jsonData);
+                        } catch (e) {
+                            console.error("Lỗi parse JSON:", e);
+                        }
+                    });
+                }
+                res.json({ data: chunks }); // Trả về danh sách các sự kiện riêng biệt
+            }
+
+            await readStream();
+
+        } catch (error) {
+            console.error('Error calling Dify API:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
         }
     }
 }

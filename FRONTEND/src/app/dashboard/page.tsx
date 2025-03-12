@@ -30,7 +30,7 @@ export default function ChatPage() {
   const [botTyping, setBotTyping] = useState(false);
 
   const sendMessage = async () => {
-    if (!input.trim() || !token) return;
+    if (!input.trim()) return;
 
     const userMessage = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMessage]);
@@ -38,62 +38,42 @@ export default function ChatPage() {
     setBotTyping(true);
 
     try {
-      const res = await fetch("http://localhost/console/api/apps/0c186eef-a005-48c0-9808-c00764f8cbac/advanced-chat/workflows/draft/run", {
+      const difyToken = Cookies.get("dify_token"); // Lấy token từ cookie
+
+      const res = await fetch("http://localhost:4000/api/chatbots/ChatDify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${difyToken}`, // Gửi token qua header
         },
         body: JSON.stringify({
-          response_mode: "blocking",
-          conversation_id: "",
-          query: input,
-          inputs: {},
-          model_config: {},
+          session_id: "", // Thay bằng session thực tế
+          message: input,
         }),
+        credentials: "include", // Đảm bảo cookie được gửi kèm (nếu cần)
       });
 
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder("utf-8");
+      const data = await res.json();
+      console.log("Dữ liệu trả về:", data);
 
-      let done = false;
-      let finalAnswer = "";
+      // Lọc ra sự kiện "workflow_finished"
+      const workflowEvent = data?.data?.find(event => event.event === "workflow_finished");
 
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        if (doneReading) break;
+      // Lấy câu trả lời từ outputs.answer
+      const finalAnswer = workflowEvent?.data?.outputs?.answer || "Bot không phản hồi";
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (let line of lines) {
-          let trimmed = line.trim();
-          if (!trimmed) continue;
-
-          if (trimmed.startsWith("data:")) {
-            trimmed = trimmed.substring(5).trim();
-          }
-
-          try {
-            const event = JSON.parse(trimmed);
-            if (event.event === "workflow_finished") {
-              finalAnswer = event.data?.outputs?.answer || "";
-              done = true;
-              break;
-            }
-          } catch (err) {
-            console.error("Parse error:", trimmed, err);
-          }
-        }
-      }
-
+      // Cập nhật tin nhắn bot
       setMessages((prev) => [...prev, { sender: "bot", text: finalAnswer }]);
+
     } catch (error) {
       console.error("Lỗi gửi tin nhắn", error);
     } finally {
       setBotTyping(false);
     }
   };
+
+
+
 
   const handleLogout = () => {
     Cookies.remove("dify_token");

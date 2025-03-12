@@ -30,4 +30,7 @@ router.put('/:id', authMiddleware.verifyToken, chatbotController.updateChatbot);
 // Xóa chatbot theo ID
 router.delete('/:id', authMiddleware.verifyToken, chatbotController.deleteChatbot);
 
+// Chat với chatbot
+router.post('/ChatDify', chatbotController.ChatDify)
+
 module.exports = router;

@@ -1,5 +1,3 @@
-'use server';
-
 export async function handleLogin(formData: FormData) {
     const emailDify = "ntthuylinh201910@gmail.com";
     const passwordDify = "Thuylinh@1910";
@@ -14,6 +12,7 @@ export async function handleLogin(formData: FormData) {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ email, password }),
+            credentials: 'include'
         });
 
         const data = await response.json();
@@ -22,6 +21,9 @@ export async function handleLogin(formData: FormData) {
         if (!response.ok) {
             return { error: data.message || "Đăng nhập thất bại" };
         }
+
+        // ✅ Lưu token vào localStorage
+        localStorage.setItem("token", data.token);
 
         // Gọi API đăng nhập Dify sau khi xác thực thành công
         const difyResponse = await fetch("http://localhost/console/api/login", {
@@ -40,7 +42,7 @@ export async function handleLogin(formData: FormData) {
 
         return {
             success: true,
-            token: difyData.data.access_token, // ✅ Trả về token để lưu vào cookie
+            token: difyData.data.access_token, // ✅ Trả về token Dify nếu cần
         };
     } catch (error: any) {
         return { error: error.message || "Có lỗi xảy ra trong quá trình đăng nhập" };

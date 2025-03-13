@@ -2,24 +2,49 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { jwtDecode } from "jwt-decode"; // Import jwt-decode
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, LogOut, Menu } from "lucide-react";
+import { Send, LogOut } from "lucide-react";
+import ChatSessions from "@/app/HistoryChat/page";
+
+interface Message {
+  id: number;
+  sender: string;
+  text: string;
+  timestamp: string;
+}
 
 export default function ChatPage() {
   const router = useRouter();
-  const [messages, setMessages] = useState<{ sender: string; text: string }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [token, setToken] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // State để điều khiển sidebar
+  const [token, setToken] = useState<string | null>(null);
+  const [difyToken, setDifyToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [botTyping, setBotTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
-    const difyToken = Cookies.get("dify_token");
-    if (!difyToken) {
+    const authToken = localStorage.getItem("token");
+    const difyAuthToken = Cookies.get("dify_token");
+    if (!authToken || !difyAuthToken) {
       router.push("/login");
-    } else {
-      setToken(difyToken);
+      return;
+    }
+    setToken(authToken);
+    setDifyToken(difyAuthToken);
+    console.log("abc:", authToken, difyAuthToken);
+
+    try {
+      const decoded: any = jwtDecode(authToken); // Giải mã token
+      setUserId(decoded.id); // Lấy user_id từ token
+      console.log("id user:", decoded.id);
+    } catch (error) {
+      console.error("Lỗi giải mã token:", error);
+      router.push("/login");
     }
   }, [router]);
 
@@ -27,44 +52,46 @@ export default function ChatPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const [botTyping, setBotTyping] = useState(false);
-
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || selectedSessionId === null) return;
 
-    const userMessage = { sender: "user", text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    // Thêm tin nhắn người dùng vào state
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "user",
+        text: input,
+        timestamp: new Date().toISOString()
+      },
+    ]);
+    const messageToSend = input;
     setInput("");
     setBotTyping(true);
 
     try {
-      const difyToken = Cookies.get("dify_token"); // Lấy token từ cookie
-
+      const difyAuthToken = Cookies.get("dify_token");
       const res = await fetch("http://localhost:4000/api/chatbots/ChatDify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${difyToken}`, // Gửi token qua header
+          Authorization: `Bearer ${difyAuthToken}`,
         },
         body: JSON.stringify({
-          session_id: "", // Thay bằng session thực tế
-          message: input,
+          session_id: selectedSessionId,
+          message: messageToSend,
         }),
-        credentials: "include", // Đảm bảo cookie được gửi kèm (nếu cần)
+        credentials: "include",
       });
-
       const data = await res.json();
-      console.log("Dữ liệu trả về:", data);
-
-      // Lọc ra sự kiện "workflow_finished"
-      const workflowEvent = data?.data?.find(event => event.event === "workflow_finished");
-
-      // Lấy câu trả lời từ outputs.answer
+      const workflowEvent = data?.data?.find((event: any) => event.event === "workflow_finished");
       const finalAnswer = workflowEvent?.data?.outputs?.answer || "Bot không phản hồi";
 
-      // Cập nhật tin nhắn bot
-      setMessages((prev) => [...prev, { sender: "bot", text: finalAnswer }]);
-
+      // Thêm tin nhắn bot vào state
+      setMessages((prev) => [
+        ...prev,
+        { id: Date.now() + 1, sender: "bot", text: finalAnswer, timestamp: new Date().toISOString() },
+      ]);
     } catch (error) {
       console.error("Lỗi gửi tin nhắn", error);
     } finally {
@@ -72,85 +99,76 @@ export default function ChatPage() {
     }
   };
 
+  const fetchMessages = async (sessionId: number) => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/messages/session/${sessionId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
+      }
+      const data = await res.json();
+      // Map dữ liệu API sang kiểu Message của chúng ta:
+      // API trả về dạng: [{ content: string, role: string }, ...]
+      const mappedMessages = data.map((msg: any, index: number) => ({
+        id: index, // Nếu API không có id, dùng index
+        sender: msg.role === "assistant" ? "bot" : "user",
+        text: msg.content,
+        timestamp: new Date().toISOString(), // Hoặc msg.timestamp nếu có
+      }));
+      setMessages(mappedMessages);
+    } catch (error) {
+      console.error("Lỗi khi lấy tin nhắn của phiên chat:", error);
+    }
+  };
 
-
+  const handleSelectSession = async (sessionId: number) => {
+    if (selectedSessionId === sessionId) return;
+    setSelectedSessionId(sessionId);
+    setMessages([]); // Xóa tin nhắn cũ để hiển thị tin mới
+    await fetchMessages(sessionId);
+  };
 
   const handleLogout = () => {
+    Cookies.remove("token");
     Cookies.remove("dify_token");
     router.push("/login");
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div
-        className={`bg-gray-200 p-4 overflow-y-auto h-screen fixed top-0 transition-transform ${isSidebarOpen ? "w-64 left-0" : "-translate-x-full w-0"
-          }`}
-      >
-        <h2 className="text-lg font-semibold mb-4 text-right">Lịch sử trò chuyện</h2>
-        <ul>
-          <li className="p-2 bg-white rounded-md shadow-md mb-2 cursor-pointer hover:bg-gray-100">
-            Lần trò chuyện 1
-          </li>
-          <li className="p-2 bg-white rounded-md shadow-md mb-2 cursor-pointer hover:bg-gray-100">
-            Lần trò chuyện 2
-          </li>
-        </ul>
-      </div>
-
-      {/* Nút Toggle Sidebar */}
-      <button
-        onClick={toggleSidebar}
-        className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-2 rounded-md shadow-lg z-50"
-      >
-        {isSidebarOpen ? "❮" : "❯"}
-      </button>
+      {/* Sidebar với danh sách phiên chat */}
+      {isSidebarOpen && userId && (
+        <ChatSessions token={token!} userId={userId.toString()} onSelectSession={handleSelectSession} />
+      )}
 
       {/* Khung chat chính */}
-      <div className={`flex-1 flex justify-center transition-all ${isSidebarOpen ? "ml-64" : "ml-0"}`}>
-        <div className="w-3/5 flex flex-col h-screen bg-white shadow-lg rounded-lg mx-4">
+      <div className={`flex-1 flex flex-col transition-all ${isSidebarOpen ? "ml-72" : "ml-0"}`}>
+        <div className="w-full flex flex-col h-screen bg-white shadow-lg rounded-lg mx-4">
           {/* Header */}
           <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white rounded-t-lg">
             <h1 className="text-2xl font-bold">HealthSync</h1>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 transition"
-            >
-              <LogOut size={18} />
-              Đăng xuất
+            <button onClick={handleLogout} className="flex items-center gap-2 bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 transition">
+              <LogOut size={18} /> Đăng xuất
             </button>
           </div>
-
           {/* Chat Box */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 scrollbar-hidden">
-            {messages.map((msg, index) => (
-              <div key={index} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in`}>
-                {msg.sender === "bot" && <img src="/bot-avatar.png" alt="Bot" className="w-8 h-8 rounded-full mr-2" />}
-                <div
-                  className={`px-4 py-2 rounded-xl shadow-md max-w-[75%] break-words ${msg.sender === "user"
-                    ? "bg-gradient-to-r from-blue-400 to-indigo-500 text-white"
-                    : "bg-white border border-gray-300 text-gray-800"
-                    }`}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+            <div className="flex flex-col gap-2">
+              {messages.map((msg, index) => (
+                <div key={index} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in`}>
+                  <div
+                    className={`px-4 py-2 rounded-xl shadow-md max-w-[75%] break-words ${msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
+                      }`}
+                  >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
+                  </div>
                 </div>
-                {msg.sender === "user" && <img src="/user-avatar.png" alt="User" className="w-8 h-8 rounded-full ml-2" />}
-              </div>
-            ))}
-
-            {botTyping && (
-              <div className="flex items-center space-x-2">
-                <img src="/bot-avatar.png" alt="Bot" className="w-8 h-8 rounded-full mr-2" />
-                <div className="bg-gray-200 px-3 py-1 rounded-full text-gray-600">Đang nhập...</div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
+              ))}
+              {botTyping && <div className="text-gray-500 animate-pulse">Bot đang nhập...</div>}
+              <div ref={chatEndRef} />
+            </div>
           </div>
-
           {/* Input */}
           <div className="flex items-center bg-gray-100 p-4 shadow-md rounded-b-lg">
             <input

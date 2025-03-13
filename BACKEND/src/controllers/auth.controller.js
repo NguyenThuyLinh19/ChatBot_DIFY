@@ -95,6 +95,15 @@ class AuthController {
                 { expiresIn: '24h' }
             );
 
+            // Set cookie "token" vào response, sử dụng các tùy chọn bảo mật:
+            res.cookie('token', token, {
+                httpOnly: true, // Không cho phép truy cập từ JavaScript trên client
+                secure: process.env.NODE_ENV === 'production', // Chỉ gửi cookie qua HTTPS trong production
+                maxAge: 3 * 60 * 60 * 1000, // 24 giờ (tính theo ms)
+                sameSite: 'Lax', // Ngăn chặn CSRF
+                path: '/',
+            });
+
             res.json({
                 message: 'Đăng nhập thành công',
                 token,

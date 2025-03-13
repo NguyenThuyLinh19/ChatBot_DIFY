@@ -4,11 +4,11 @@ class MessageController {
     // Tạo message mới cho một phiên chat
     async createMessage(req, res) {
         try {
-            const { session_id, sender, content } = req.body;
+            const { session_id, role, content } = req.body;
             // Bạn có thể thực hiện kiểm tra dữ liệu đầu vào tại đây
 
             // Tạo mới message (giả sử Message.create trả về ID của message được tạo)
-            const messageId = await Message.create({ session_id, sender, content });
+            const messageId = await Message.saveMessage({ session_id, role, content });
             res.status(201).json({ message: 'Message created successfully', messageId });
         } catch (error) {
             res.status(500).json({ message: error.message });
@@ -31,7 +31,7 @@ class MessageController {
     // Lấy tất cả các message theo session_id
     async getMessagesBySession(req, res) {
         try {
-            const messages = await Message.getBySession(req.params.session_id);
+            const messages = await Message.getMessages(req.params.session_id);
             res.json(messages);
         } catch (error) {
             res.status(500).json({ message: error.message });

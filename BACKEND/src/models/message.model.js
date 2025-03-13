@@ -2,12 +2,12 @@ const pool = require("../config/database"); // Kết nối MariaDB
 
 class Message {
     //Lưu tin nhắn vào database
-    static async saveMessage(sessionId, message, role) {
+    static async saveMessage(sessionId, content, message) {
         const conn = await pool.getConnection();
         try {
             await conn.query(
                 "INSERT INTO Messages (session_id, content, role) VALUES (?, ?, ?)",
-                [sessionId, message, role]
+                [sessionId, message, content]
             );
         } finally {
             conn.release();

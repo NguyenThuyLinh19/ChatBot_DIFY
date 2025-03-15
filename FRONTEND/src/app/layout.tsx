@@ -14,6 +14,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "HealthSync",
+  icons: {
+    icon: "/logo.jpg",
+  },
   description: "Hệ thống thông tin y tế",
 };
 

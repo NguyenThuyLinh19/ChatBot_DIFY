@@ -1,36 +1,58 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 export default function HomePage() {
   return (
-    <div className="h-screen flex flex-col">
-      {/* Navbar */}
-      <header className="bg-blue-600 text-white py-4 px-6">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">HealthChatbot</h1>
-          <nav>
-            <Link href="/login" className="mr-4 hover:underline">Đăng nhập</Link>
-            <Link href="/register" className="hover:underline">Đăng ký</Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Main Content - căn giữa nội dung */}
-      <main className="flex-1 flex items-center justify-center bg-gray-100">
-        <div className="max-w-2xl w-full text-center">
-          <h2 className="text-4xl font-bold text-gray-800">
-            Chào mừng đến với <span className="text-blue-600">HealthChatbot</span>
-          </h2>
-          <p className="mt-4 text-gray-600">
+    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-200">
+      <div className="max-w-7xl w-full grid grid-cols-1 md:grid-cols-2 items-center px-10">
+        {/* Nội dung bên trái */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="space-y-6"
+        >
+          <h1 className="text-6xl font-extrabold text-gray-800 leading-tight">
+            Chào mừng đến với{" "}
+            <span className="text-blue-600">HealthSync</span>
+          </h1>
+          <p className="text-gray-700 text-lg leading-relaxed">
             Trợ lý ảo thông minh giúp bạn giải đáp mọi thắc mắc một cách nhanh chóng và chính xác.
           </p>
-          <Link href="/login">
-            <button className="mt-6 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600">
-              Tạo chatbot
-            </button>
-          </Link>
-        </div>
-      </main>
+          <div className="flex space-x-4">
+            <Link href="/login">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-blue-600 text-white px-8 py-4 rounded-full text-lg shadow-lg hover:bg-blue-700 transition"
+              >
+                Bắt đầu ngay
+              </motion.button>
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Hình ảnh bên phải */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1 }}
+          className="relative flex justify-center"
+        >
+          {/* Hiệu ứng nền */}
+          <div className="absolute w-80 h-80 bg-blue-300 opacity-20 rounded-full blur-3xl -z-10 top-10 right-10"></div>
+
+          <Image
+            src="/health_care.jpg" // Thay bằng hình ảnh bạn muốn
+            alt="Trợ lý ảo y tế"
+            width={450}
+            height={450}
+            className="drop-shadow-2xl rounded-lg"
+          />
+        </motion.div>
+      </div>
     </div>
   );
 }

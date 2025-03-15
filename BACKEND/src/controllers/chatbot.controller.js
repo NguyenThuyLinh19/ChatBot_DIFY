@@ -8,10 +8,23 @@ class ChatbotController {
     // Tạo chatbot mới
     async createChatbot(req, res) {
         try {
-            const { user_id, name, description, dify_chatbot_id, status, configuration } = req.body;
+            const {
+                user_id,
+                name,
+                description,
+                dify_chatbot_id,
+                status,
+                configuration } = req.body;
+
             const chatbotId = await Chatbots.createChatbot(
-                user_id, name, description, dify_chatbot_id, status, configuration
+                user_id,
+                name,
+                description,
+                dify_chatbot_id,
+                status,
+                configuration
             );
+
             res.status(201).json({ message: 'Tạo chatbot thành công', chatbotId });
         } catch (error) {
             res.status(500).json({ message: error.message });
@@ -23,7 +36,7 @@ class ChatbotController {
         try {
             const chatbot = await Chatbots.getChatbotById(req.params.id);
             if (!chatbot) {
-                return res.status(404).json({ message: 'Chatbot not found' });
+                return res.status(404).json({ message: 'Không tìm thấy chatbot' });
             }
             res.json(chatbot);
         } catch (error) {

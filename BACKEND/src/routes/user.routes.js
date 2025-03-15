@@ -11,10 +11,10 @@ const validateUser = [
     body('full_name').trim().notEmpty()
 ];
 
-router.get('/:id', authMiddleware.verifyToken, userController.getUser);
+router.get('/:id', authMiddleware.authToken, userController.getUser);
 router.get('/', userController.getAllUsers);
 router.post('/', validateUser, userController.createUser);
-router.put('/:id', authMiddleware.verifyToken, userController.updateUser);
-router.delete('/:id', authMiddleware.verifyToken, userController.deleteUser);
+router.put('/:id', authMiddleware.authToken, userController.updateUser);
+router.delete('/:id', authMiddleware.authToken, userController.deleteUser);
 
 module.exports = router;

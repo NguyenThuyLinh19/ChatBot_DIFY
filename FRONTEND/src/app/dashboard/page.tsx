@@ -48,24 +48,18 @@ export default function ChatPage() {
     }
   }, [router]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const sendMessage = async () => {
     if (!input.trim() || selectedSessionId === null) return;
 
-    // Thêm tin nhắn người dùng vào state
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        sender: "user",
-        text: input,
-        timestamp: new Date().toISOString()
-      },
-    ]);
-    const messageToSend = input;
+    const userMessage: Message = {
+      id: Date.now(),
+      sender: "user",
+      text: input,
+      timestamp: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    saveMessages(input, "user", selectedSessionId); // Lưu tin nhắn user
     setInput("");
     setBotTyping(true);
 
@@ -79,21 +73,47 @@ export default function ChatPage() {
         },
         body: JSON.stringify({
           session_id: selectedSessionId,
-          message: messageToSend,
+          message: input,
         }),
-        credentials: "include",
       });
-      const data = await res.json();
-      const workflowEvent = data?.data?.find((event: any) => event.event === "workflow_finished");
-      const finalAnswer = workflowEvent?.data?.outputs?.answer || "Bot không phản hồi";
 
-      // Thêm tin nhắn bot vào state
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, sender: "bot", text: finalAnswer, timestamp: new Date().toISOString() },
-      ]);
+      if (!res.ok) {
+        throw new Error(`Lỗi API: ${res.status} - ${await res.text()}`);
+      }
+
+      const responseData = await res.json();
+
+      // Kiểm tra nếu responseData không phải là object hoặc không có data
+      if (!responseData || !Array.isArray(responseData.data)) {
+        console.error("Dữ liệu API không hợp lệ:", responseData);
+        setBotTyping(false);
+        return;
+      }
+
+      const dataArray = responseData.data; // Mảng thực sự chứa dữ liệu
+
+      // Tìm phần tử có event là "workflow_finished"
+      const workflowEvent = dataArray.find((event: any) => event.event === "workflow_finished");
+
+      if (!workflowEvent || !workflowEvent.data?.outputs?.answer) {
+        console.error("Không tìm thấy câu trả lời từ chatbot:", responseData);
+        setBotTyping(false);
+        return;
+      }
+
+      const finalAnswer = workflowEvent.data.outputs.answer;
+
+      const botMessage: Message = {
+        id: Date.now() + 1,
+        sender: "bot",
+        text: finalAnswer,
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+      saveMessages(finalAnswer, "assistant", selectedSessionId); // Lưu tin nhắn bot vào DB
     } catch (error) {
-      console.error("Lỗi gửi tin nhắn", error);
+      console.error("Lỗi khi gửi tin nhắn:", error);
     } finally {
       setBotTyping(false);
     }
@@ -102,7 +122,9 @@ export default function ChatPage() {
   const fetchMessages = async (sessionId: number) => {
     try {
       const res = await fetch(`http://localhost:4000/api/messages/session/${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
       });
       if (!res.ok) {
         throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
@@ -119,6 +141,34 @@ export default function ChatPage() {
       setMessages(mappedMessages);
     } catch (error) {
       console.error("Lỗi khi lấy tin nhắn của phiên chat:", error);
+    }
+  };
+
+  const saveMessages = async (content: string, role: string, sessionId: number) => {
+    if (!token) {
+      console.error("Không có token xác thực!");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://localhost:4000/api/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          content: content,
+          role: role,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Lỗi khi lưu tin nhắn:", await res.text());
+      }
+    } catch (error) {
+      console.error("Lỗi kết nối khi lưu tin nhắn:", error);
     }
   };
 

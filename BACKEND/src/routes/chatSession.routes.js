@@ -12,21 +12,21 @@ const validateChatSession = [
 
 // Routes
 // Lấy tất cả phiên chat của một người dùng
-router.get('/user/:user_id', authMiddleware.verifyToken, chatSessionController.getSessionsByUser);
+router.get('/user/:user_id', authMiddleware.authToken, chatSessionController.getSessionsByUser);
 
 // Tạo phiên chat mới
-router.post('/', authMiddleware.verifyToken, validateChatSession, chatSessionController.createSession);
+router.post('/', authMiddleware.authToken, validateChatSession, chatSessionController.createSession);
 
 // Lấy thông tin phiên chat theo ID
-router.get('/:id', authMiddleware.verifyToken, chatSessionController.getSession);
+router.get('/:id', authMiddleware.authToken, chatSessionController.getSession);
 
 // Cập nhật thông tin phiên chat (nếu cần update các trường khác)
-router.put('/:id', authMiddleware.verifyToken, chatSessionController.updateSession);
+router.put('/:id', authMiddleware.authToken, chatSessionController.updateSession);
 
 // Kết thúc phiên chat (update end_time)
-router.put('/:id/end', authMiddleware.verifyToken, chatSessionController.endSession);
+router.put('/:id/end', authMiddleware.authToken, chatSessionController.endSession);
 
 // Xóa phiên chat theo ID
-router.delete('/:id', authMiddleware.verifyToken, chatSessionController.deleteSession);
+router.delete('/:id', authMiddleware.authToken, chatSessionController.deleteSession);
 
 module.exports = router;

@@ -26,7 +26,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chatbots', chatbotRoutes);
 app.use('/api/chat-sessions', chatSessionRoutes);
 app.use('/api/messages', messageRoutes);
-// app.use('/api/chat', chatRouters);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

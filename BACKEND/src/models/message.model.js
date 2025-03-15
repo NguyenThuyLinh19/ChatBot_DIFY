@@ -1,31 +1,18 @@
-const pool = require("../config/database"); // Kết nối MariaDB
+const db = require('../config/database'); // Kết nối MariaDB
 
 class Message {
     //Lưu tin nhắn vào database
-    static async saveMessage(sessionId, content, message) {
-        const conn = await pool.getConnection();
-        try {
-            await conn.query(
-                "INSERT INTO Messages (session_id, content, role) VALUES (?, ?, ?)",
-                [sessionId, message, content]
-            );
-        } finally {
-            conn.release();
-        }
+    static async createMessage(session_id, content, role) {
+        const query = `INSERT INTO Messages (session_id, content, role) VALUES (?, ?, ?)`;
+        await db.execute(query, [session_id, content, role]);
+        return { success: true };
     }
 
-    //Lấy tin nhắn theo session_id
-    static async getMessages(sessionId) {
-        const conn = await pool.getConnection();
-        try {
-            const [messages] = await conn.query(
-                "SELECT content, role FROM Messages WHERE session_id = ? ORDER BY created_at ASC",
-                [sessionId]
-            );
-            return messages;
-        } finally {
-            conn.release();
-        }
+    //Lấy tất cả tin nhắn của một phiên chat
+    static async getMessagesBySession(session_id) {
+        const query = `SELECT * FROM Messages WHERE session_id = ? ORDER BY created_at ASC`;
+        const [messages] = await db.execute(query, [session_id]);
+        return messages;
     }
 }
 

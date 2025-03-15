@@ -30,6 +30,7 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
             const res = await fetch(`http://localhost:4000/api/chat-sessions/user/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
+            console.log(res)
 
             if (!res.ok) {
                 throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);

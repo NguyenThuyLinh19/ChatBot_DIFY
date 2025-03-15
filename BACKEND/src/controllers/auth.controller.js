@@ -38,7 +38,7 @@ class AuthController {
             const userId = await user.create();
 
             res.status(201).json({
-                message: 'User registered successfully',
+                message: 'Người dùng đã đăng ký thành công',
                 user: {
                     id: userId,
                     email,
@@ -46,8 +46,8 @@ class AuthController {
                 }
             });
         } catch (error) {
-            console.error('Registration error:', error);
-            res.status(500).json({ message: 'Error registering user' });
+            console.error('Lỗi dăng ký:', error);
+            res.status(500).json({ message: 'Lỗi đăng ký người dùng' });
         }
     }
 
@@ -60,9 +60,9 @@ class AuthController {
             }
 
             const { email, password } = req.body;
-            console.log(email, password)
+            console.log("email: ", email, "password: ", password)
 
-            //Kiểm tra người dùng
+            //Kiểm tra email người dùng
             const user = await User.findByEmail(email);
             if (!user) {
                 return res.status(401).json({
@@ -90,9 +90,14 @@ class AuthController {
 
             //Tạo JWT token
             const token = jwt.sign(
-                { id: user.id, email: user.email },
+                {
+                    id: user.id,
+                    email: user.email
+                },
                 process.env.JWT_SECRET,
-                { expiresIn: '24h' }
+                {
+                    expiresIn: '24h'
+                }
             );
 
             // Set cookie "token" vào response, sử dụng các tùy chọn bảo mật:
@@ -145,7 +150,7 @@ class AuthController {
             // Find user
             const user = await User.findById(req.user.id);
             if (!user) {
-                return res.status(404).json({ message: 'User not found' });
+                return res.status(404).json({ message: 'Không tìm thấy người dùng' });
             }
 
             // Verify current password
@@ -155,12 +160,12 @@ class AuthController {
             );
             if (!isValidPassword) {
                 return res.status(401).json({
-                    message: 'Current password is incorrect'
+                    message: 'Mật khẩu không chính xác'
                 });
             }
 
-            if (newPassword.length < 8) {
-                return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 8 ký tự' });
+            if (newPassword.length < 6) {
+                return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự' });
             }
 
             // Hash new password
@@ -170,10 +175,14 @@ class AuthController {
             // Update password
             await User.update(user.id, { password_hash: newPasswordHash });
 
-            res.json({ message: 'Password changed successfully' });
+            res.json({
+                message: 'Đã thay đổi mật khẩu thành công'
+            });
         } catch (error) {
-            console.error('Change password error:', error);
-            res.status(500).json({ message: 'Error changing password' });
+            console.error('Lỗi khi đổi mật khẩu:', error);
+            res.status(500).json({
+                message: 'Đổi mật khẩu bị lỗi'
+            });
         }
     }
 }

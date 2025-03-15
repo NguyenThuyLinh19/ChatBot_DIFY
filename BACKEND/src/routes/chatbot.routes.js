@@ -16,19 +16,19 @@ const validateChatbot = [
 
 // Routes
 // Lấy danh sách chatbot của một người dùng
-router.get('/user/:user_id', authMiddleware.verifyToken, chatbotController.getChatbotsByUser);
+router.get('/user/:user_id', authMiddleware.authToken, chatbotController.getChatbotsByUser);
 
 // Tạo chatbot mới
-router.post('/', authMiddleware.verifyToken, validateChatbot, chatbotController.createChatbot);
+router.post('/', authMiddleware.authToken, validateChatbot, chatbotController.createChatbot);
 
 // Lấy thông tin chatbot theo ID
-router.get('/:id', authMiddleware.verifyToken, chatbotController.getChatbot);
+router.get('/:id', authMiddleware.authToken, chatbotController.getChatbot);
 
 // Cập nhật thông tin chatbot theo ID
-router.put('/:id', authMiddleware.verifyToken, chatbotController.updateChatbot);
+router.put('/:id', authMiddleware.authToken, chatbotController.updateChatbot);
 
 // Xóa chatbot theo ID
-router.delete('/:id', authMiddleware.verifyToken, chatbotController.deleteChatbot);
+router.delete('/:id', authMiddleware.authToken, chatbotController.deleteChatbot);
 
 // Chat với chatbot
 router.post('/ChatDify', chatbotController.ChatDify)

@@ -11,18 +11,21 @@ export async function handleLogin(formData: FormData) {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ email, password }),
-            credentials: 'include'
+            body: JSON.stringify({
+                email,
+                password
+            }),
+            credentials: 'include' //Cho phép gửi cookie trong yêu cầu 
         });
 
         const data = await response.json();
         console.log("Backend response:", data);
 
         if (!response.ok) {
-            return { error: data.message || "Đăng nhập thất bại" };
+            return { error: data.message || "Email hoặc mật khẩu không chính xác" };
         }
 
-        // ✅ Lưu token vào localStorage
+        //Lưu token vào localStorage
         localStorage.setItem("token", data.token);
 
         // Gọi API đăng nhập Dify sau khi xác thực thành công

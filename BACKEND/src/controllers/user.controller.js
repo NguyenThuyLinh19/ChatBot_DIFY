@@ -11,7 +11,7 @@ class UserController {
             res.status(500).json({ message: error.message });
         }
     }
-    
+
     // Get user by ID
     async getUser(req, res) {
         try {
@@ -26,11 +26,25 @@ class UserController {
         }
     }
 
+    //Get full name of user 
+    async getUserFullName(req, res) {
+        try {
+            const user = await User.findById(req.params.id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            // Trả về full_name
+            res.json({ full_name: user.full_name });
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    }
+
     // Create new user
     async createUser(req, res) {
         try {
             const { email, password, full_name } = req.body;
-            
+
             // Check if user already exists
             const existingUser = await User.findByEmail(email);
             if (existingUser) {
@@ -49,9 +63,9 @@ class UserController {
             });
 
             const userId = await user.create();
-            res.status(201).json({ 
+            res.status(201).json({
                 message: 'User created successfully',
-                userId 
+                userId
             });
         } catch (error) {
             res.status(500).json({ message: error.message });

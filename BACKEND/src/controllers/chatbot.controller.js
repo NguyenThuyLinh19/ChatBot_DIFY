@@ -146,7 +146,7 @@ class ChatbotController {
             await readStream();
 
         } catch (error) {
-            console.error('Error calling Dify API:', error);
+            console.error('Lỗi khi gọi Dify API:', error);
             res.status(500).json({ error: 'Internal Server Error' });
         }
     }

@@ -8,7 +8,6 @@ const { body } = require('express-validator');
 const validateChatbot = [
     body('user_id').notEmpty().withMessage('User ID is required'),
     body('name').notEmpty().withMessage('Name is required'),
-    // body('description').optional().trim(), // description có thể là optional
     body('dify_chatbot_id').notEmpty().withMessage('Dify Chatbot ID is required'),
     body('status').notEmpty().withMessage('Status is required'),
     body('configuration').notEmpty().withMessage('Configuration is required')

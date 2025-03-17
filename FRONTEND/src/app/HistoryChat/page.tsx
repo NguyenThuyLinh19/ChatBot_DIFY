@@ -15,12 +15,13 @@ interface HistoryChatProps {
     token: string;
     userId: string;
     onSelectSession: (sessionId: number) => void;
+    isOpen: boolean;                       // Nhận trạng thái từ component cha
+    setIsOpen: (value: boolean) => void;     // Hàm cập nhật trạng thái từ component cha
 }
 
-export default function ChatSessions({ token, userId, onSelectSession }: HistoryChatProps) {
+export default function ChatSessions({ token, userId, onSelectSession, isOpen, setIsOpen }: HistoryChatProps) {
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isOpen, setIsOpen] = useState(true); // Kiểm soát sidebar mở/đóng
 
     useEffect(() => {
         fetchSessions();
@@ -31,11 +32,9 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
             const res = await fetch(`http://localhost:4000/api/chat-sessions/user/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
             if (!res.ok) {
                 throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
             }
-
             const data = await res.json();
             setSessions(data || []);
         } catch (error) {
@@ -55,11 +54,9 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
                 },
                 body: JSON.stringify({ user_id: userId, chatbot_id: 1 }),
             });
-
             if (!res.ok) {
                 throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
             }
-
             fetchSessions();
         } catch (error) {
             console.error("Lỗi khi tạo phiên chat:", error);
@@ -72,11 +69,9 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
-
             if (!res.ok) {
                 throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
             }
-
             setSessions((prev) => prev.filter((session) => session.id !== sessionId));
         } catch (error) {
             console.error("Lỗi khi xóa phiên chat:", error);
@@ -85,8 +80,7 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
 
     return (
         <div
-            className={`fixed top-0 left-0 h-screen shadow-md border-r border-gray-300 bg-gray-100 transition-all ${isOpen ? "w-72 p-4" : "w-14 p-2"
-                }`}
+            className={`fixed top-0 left-0 h-screen shadow-md border-r border-gray-300 bg-gray-100 transition-all duration-300 ${isOpen ? "w-72 p-4" : "w-14 p-2"}`}
         >
             {/* Nút menu để đóng/mở sidebar */}
             <div className="flex justify-between items-center mb-4">
@@ -97,8 +91,6 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
                 >
                     {isOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
-
-                {/* Chỉ hiển thị tiêu đề khi sidebar mở */}
                 {isOpen && <h2 className="text-lg font-semibold text-gray-700">Lịch sử trò chuyện</h2>}
             </div>
 
@@ -128,7 +120,7 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
                                 onClick={() => onSelectSession(session.id)}
                             >
                                 <span className="flex-1">
-                                    🗂 Phiên {session.id} - {new Date(session.start_time).toLocaleString()}
+                                    Chat {session.id} - {new Date(session.start_time).toLocaleString()}
                                 </span>
                                 <button
                                     onClick={(e) => {
@@ -145,7 +137,7 @@ export default function ChatSessions({ token, userId, onSelectSession }: History
                     </ul>
                 )
             ) : (
-                <p className="text-gray-500 text-center">Mở menu để xem</p>
+                <p className="text-gray-500 text-center"></p>
             )}
         </div>
     );

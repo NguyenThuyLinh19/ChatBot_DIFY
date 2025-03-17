@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode"; // Import jwt-decode
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, LogOut } from "lucide-react";
+import { Send, User, Bot } from "lucide-react";
 import ChatSessions from "@/app/HistoryChat/page";
 
 interface Message {
@@ -22,10 +22,14 @@ export default function ChatPage() {
   const [token, setToken] = useState<string | null>(null);
   const [difyToken, setDifyToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
+  const [userName, setUserName] = useState<string>(""); // Thêm state cho tên người dùng
   const [botTyping, setBotTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
+  // State điều khiển hiển thị sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // State điều khiển dropdown hiển thị tên người dùng
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   useEffect(() => {
     const authToken = localStorage.getItem("token");
@@ -36,17 +40,44 @@ export default function ChatPage() {
     }
     setToken(authToken);
     setDifyToken(difyAuthToken);
-    console.log("abc:", authToken, difyAuthToken);
 
     try {
       const decoded: any = jwtDecode(authToken); // Giải mã token
       setUserId(decoded.id); // Lấy user_id từ token
-      console.log("id user:", decoded.id);
+      // Giả sử token có chứa tên người dùng trong trường "name"
+      setUserName(decoded.name || "User");
     } catch (error) {
       console.error("Lỗi giải mã token:", error);
       router.push("/login");
     }
   }, [router]);
+
+  useEffect(() => {
+    const fetchFullName = async () => {
+      // Chỉ gọi nếu đã có token và userId
+      if (!token || !userId) return;
+
+      try {
+        // Thay :id bằng userId thực tế
+        const res = await fetch(`http://localhost:4000/api/users/${userId}/fullname`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Lỗi API: ${res.status} - ${await res.text()}`);
+        }
+
+        const data = await res.json();
+        setUserName(data.full_name || "Người dùng");
+      } catch (error) {
+        console.error("Lỗi khi lấy tên đầy đủ:", error);
+      }
+    };
+
+    fetchFullName();
+  }, [token, userId]);
 
   const sendMessage = async () => {
     if (!input.trim() || selectedSessionId === null) return;
@@ -59,7 +90,7 @@ export default function ChatPage() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    saveMessages(input, "user", selectedSessionId); // Lưu tin nhắn user
+    saveMessages(input, "user", selectedSessionId);
     setInput("");
     setBotTyping(true);
 
@@ -83,16 +114,13 @@ export default function ChatPage() {
 
       const responseData = await res.json();
 
-      // Kiểm tra nếu responseData không phải là object hoặc không có data
       if (!responseData || !Array.isArray(responseData.data)) {
         console.error("Dữ liệu API không hợp lệ:", responseData);
         setBotTyping(false);
         return;
       }
 
-      const dataArray = responseData.data; // Mảng thực sự chứa dữ liệu
-
-      // Tìm phần tử có event là "workflow_finished"
+      const dataArray = responseData.data;
       const workflowEvent = dataArray.find((event: any) => event.event === "workflow_finished");
 
       if (!workflowEvent || !workflowEvent.data?.outputs?.answer) {
@@ -111,7 +139,7 @@ export default function ChatPage() {
       };
 
       setMessages((prev) => [...prev, botMessage]);
-      saveMessages(finalAnswer, "assistant", selectedSessionId); // Lưu tin nhắn bot vào DB
+      saveMessages(finalAnswer, "assistant", selectedSessionId);
     } catch (error) {
       console.error("Lỗi khi gửi tin nhắn:", error);
     } finally {
@@ -130,13 +158,11 @@ export default function ChatPage() {
         throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
       }
       const data = await res.json();
-      // Map dữ liệu API sang kiểu Message của chúng ta:
-      // API trả về dạng: [{ content: string, role: string }, ...]
       const mappedMessages = data.map((msg: any, index: number) => ({
-        id: index, // Nếu API không có id, dùng index
+        id: index,
         sender: msg.role === "assistant" ? "bot" : "user",
         text: msg.content,
-        timestamp: new Date().toISOString(), // Hoặc msg.timestamp nếu có
+        timestamp: new Date().toISOString(),
       }));
       setMessages(mappedMessages);
     } catch (error) {
@@ -175,7 +201,7 @@ export default function ChatPage() {
   const handleSelectSession = async (sessionId: number) => {
     if (selectedSessionId === sessionId) return;
     setSelectedSessionId(sessionId);
-    setMessages([]); // Xóa tin nhắn cũ để hiển thị tin mới
+    setMessages([]);
     await fetchMessages(sessionId);
   };
 
@@ -187,20 +213,41 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar với danh sách phiên chat */}
-      {isSidebarOpen && userId && (
-        <ChatSessions token={token!} userId={userId.toString()} onSelectSession={handleSelectSession} />
+      {/* Render ChatSessions và gửi isOpen, setIsOpen */}
+      {userId && (
+        <ChatSessions
+          token={token!}
+          userId={userId.toString()}
+          onSelectSession={handleSelectSession}
+          isOpen={isSidebarOpen}
+          setIsOpen={setIsSidebarOpen}
+        />
       )}
 
       {/* Khung chat chính */}
-      <div className={`flex-1 flex flex-col transition-all ${isSidebarOpen ? "ml-72" : "ml-0"}`}>
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? "ml-72" : "ml-14"} mr-8`}>
         <div className="w-full flex flex-col h-screen bg-white shadow-lg rounded-lg mx-4">
           {/* Header */}
-          <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white rounded-t-lg">
+          <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white rounded-t-lg relative">
             <h1 className="text-2xl font-bold">HealthSync</h1>
-            <button onClick={handleLogout} className="flex items-center gap-2 bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 transition">
-              <LogOut size={18} /> Đăng xuất
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu((prev) => !prev)}
+                className="flex items-center gap-2 bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+              >
+                {userName || "User"}
+              </button>
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg">
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           {/* Chat Box */}
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 scrollbar-hidden">

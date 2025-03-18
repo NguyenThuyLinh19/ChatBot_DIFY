@@ -60,7 +60,6 @@ class AuthController {
             }
 
             const { email, password } = req.body;
-            console.log("email: ", email, "password: ", password)
 
             //Kiểm tra email người dùng
             const user = await User.findByEmail(email);

@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode"; // Import jwt-decode
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, User, Bot } from "lucide-react";
+import { Send, LogOut, CircleUser } from "lucide-react";
 import ChatSessions from "@/app/HistoryChat/page";
 
 interface Message {
@@ -79,6 +79,22 @@ export default function ChatPage() {
     fetchFullName();
   }, [token, userId]);
 
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const userContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userContainerRef.current && !userContainerRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const sendMessage = async () => {
     if (!input.trim() || selectedSessionId === null) return;
 
@@ -151,7 +167,7 @@ export default function ChatPage() {
     try {
       const res = await fetch(`http://localhost:4000/api/messages/session/${sessionId}`, {
         headers: {
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
       });
       if (!res.ok) {
@@ -213,11 +229,12 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Render ChatSessions và gửi isOpen, setIsOpen */}
+      {/* Render ChatSessions và truyền isOpen, setIsOpen, selectedSessionId */}
       {userId && (
         <ChatSessions
           token={token!}
           userId={userId.toString()}
+          selectedSessionId={selectedSessionId}
           onSelectSession={handleSelectSession}
           isOpen={isSidebarOpen}
           setIsOpen={setIsSidebarOpen}
@@ -230,19 +247,32 @@ export default function ChatPage() {
           {/* Header */}
           <div className="flex justify-between items-center bg-gradient-to-r from-blue-500 to-indigo-600 p-4 text-white rounded-t-lg relative">
             <h1 className="text-2xl font-bold">HealthSync</h1>
-            <div className="relative">
+
+            <div ref={userContainerRef} className="relative">
+              {/* Nút User Icon */}
               <button
-                onClick={() => setShowUserMenu((prev) => !prev)}
+                onClick={(event) => {
+                  event.stopPropagation(); // Ngăn sự kiện lan ra ngoài
+                  setShowUserMenu((prev) => !prev);
+                }}
                 className="flex items-center gap-2 bg-blue-500 px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+                title="Tài khoản người dùng"
               >
-                {userName || "User"}
+                <CircleUser size={20} /> {/* Icon người dùng */}
               </button>
+
+              {/* Dropdown */}
               {showUserMenu && (
-                <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg">
+                <div ref={userMenuRef} className="absolute right-0 mt-2 w-64 bg-white border rounded shadow-lg p-2">
+                  {/* Hiển thị tên người dùng */}
+                  <div className="px-4 py-2 text-gray-800 font-semibold border-b">{userName}</div>
+
+                  {/* Nút Đăng xuất */}
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100"
+                    className="flex items-center gap-2 w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
                   >
+                    <LogOut size={18} />
                     Đăng xuất
                   </button>
                 </div>
@@ -262,7 +292,7 @@ export default function ChatPage() {
                   </div>
                 </div>
               ))}
-              {botTyping && <div className="text-gray-500 animate-pulse">Bot đang nhập...</div>}
+              {botTyping && <div className="text-gray-500 animate-pulse">Đang soạn tin...</div>}
               <div ref={chatEndRef} />
             </div>
           </div>

@@ -29,7 +29,6 @@ class ChatSessionController {
     async getSessionsByUser(req, res) {
         try {
             const sessions = await ChatSessions.getSessionsByUser(req.params.user_id);
-            console.log("1232: ", sessions)
             res.json(sessions);
         } catch (error) {
             res.status(500).json({ message: error.message });

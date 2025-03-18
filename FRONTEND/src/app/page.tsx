@@ -50,6 +50,7 @@ export default function HomePage() {
             width={450}
             height={450}
             className="drop-shadow-2xl rounded-lg"
+            priority
           />
         </motion.div>
       </div>

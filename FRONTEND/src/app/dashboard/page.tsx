@@ -26,9 +26,7 @@ export default function ChatPage() {
   const [botTyping, setBotTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
-  // State điều khiển hiển thị sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  // State điều khiển dropdown hiển thị tên người dùng
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   useEffect(() => {

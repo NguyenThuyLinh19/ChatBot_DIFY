@@ -46,6 +46,7 @@ export default function ChatSessions({
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleteSessionId, setDeleteSessionId] = useState<number | null>(null);
+    const [selectSessionId, setSelectedSessionId] = useState<number | null>(null);
 
     useEffect(() => {
         if (userId && token && !selectedSessionId) {
@@ -68,10 +69,11 @@ export default function ChatSessions({
             const sessions = await res.json();
 
             if (sessions.length > 0) {
-                // Nếu có phiên chat, chọn phiên mới nhất
-                onSelectSession(sessions[0].id);
+                // Chọn phiên mới nhất
+                const latestSession = sessions[0]; // Giả sử API trả theo `created_at DESC`
+                onSelectSession(latestSession.id);
             } else {
-                // Nếu không có, tạo phiên mới
+                // Không có phiên chat, tạo mới
                 const newSessionRes = await fetch("http://localhost:4000/api/chat-sessions", {
                     method: "POST",
                     headers: {
@@ -80,14 +82,22 @@ export default function ChatSessions({
                     },
                     body: JSON.stringify({ user_id: userId, chatbot_id: 1 }),
                 });
+
+                if (!newSessionRes.ok) {
+                    throw new Error("Không thể tạo phiên chat mới");
+                }
+
                 const newSession = await newSessionRes.json();
                 onSelectSession(newSession.id);
+
+                // Chỉ cập nhật danh sách nếu có phiên mới
+                fetchSessions();
             }
-            fetchSessions(); // Cập nhật danh sách ngay khi có phiên mới
         } catch (error) {
             console.error("Lỗi khi lấy hoặc tạo phiên chat:", error);
         }
     };
+
 
     const fetchSessions = async () => {
         try {
@@ -149,6 +159,11 @@ export default function ChatSessions({
         }
     };
 
+    const handleSelectSession = (sessionId: number) => {
+        setSelectedSessionId(sessionId);
+        onSelectSession(sessionId); // Load nội dung của phiên chat
+    };
+    
     return (
         <div
             className={`fixed top-0 left-0 h-screen shadow-md border-r border-gray-300 bg-gray-100 transition-all duration-300 ${isOpen ? "w-72 p-4" : "w-14 p-2"

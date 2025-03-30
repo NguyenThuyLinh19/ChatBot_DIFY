@@ -1,5 +1,3 @@
-'use server'
-
 export async function handleRegister(formData: FormData) {
     const full_name = formData.get('name')
     const email = formData.get('email')
@@ -28,7 +26,6 @@ export async function handleRegister(formData: FormData) {
         if (!response.ok) {
             return { error: data.message || 'Đăng ký thất bại' };
         }
-
         return { success: true }; // Trả về success để xử lý client-side
     } catch (error: any) {
         return { error: error.message || 'Có lỗi xảy ra trong quá trình đăng ký' };

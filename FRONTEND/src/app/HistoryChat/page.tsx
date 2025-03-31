@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Menu, MoreVertical, Plus, Trash2, X, Edit3 } from "lucide-react";
 import {
     Dialog,
@@ -29,51 +29,46 @@ interface Session {
 interface HistoryChatProps {
     token: string;
     userId: string;
-    selectedSessionId: number | null; // Prop để biết phiên nào đang được chọn
     onSelectSession: (sessionId: number) => void;
     isOpen: boolean;
     setIsOpen: (value: boolean) => void;
 }
 
-export default function ChatSessions({
-    token,
-    userId,
-    selectedSessionId,
-    onSelectSession,
-    isOpen,
-    setIsOpen,
-}: HistoryChatProps) {
+export default function ChatSessions({ token, userId, onSelectSession, isOpen, setIsOpen }: HistoryChatProps) {
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleteSessionId, setDeleteSessionId] = useState<number | null>(null);
-    const [selectSessionId, setSelectedSessionId] = useState<number | null>(null);
+    const hasCreatedSession = useRef(false);
 
     useEffect(() => {
-        if (userId && token && !selectedSessionId) {
+        if (userId && token) {
             fetchOrCreateSession();
         }
-    }, [userId, token, selectedSessionId]);
+    }, [userId, token]); // Gọi khi userId hoặc token thay đổi
 
 
     useEffect(() => {
         if (userId && token) {
-            fetchSessions(); // Gọi lại khi user thay đổi để cập nhật danh sách
+            fetchSessions(); //Gọi lại khi user thay đổi để cập nhật danh sách
         }
     }, [userId]);
 
+
     const fetchOrCreateSession = async () => {
+        if (hasCreatedSession.current) return; // Ngăn gọi API nhiều lần
+        hasCreatedSession.current = true; // Đánh dấu đã tạo phiên
+
         try {
             const res = await fetch(`http://localhost:4000/api/chat-sessions/user/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            const sessions = await res.json();
 
+            const sessions = await res.json();
             if (sessions.length > 0) {
-                // Chọn phiên mới nhất
-                const latestSession = sessions[0]; // Giả sử API trả theo `created_at DESC`
-                onSelectSession(latestSession.id);
+                // Nếu có phiên chat, chọn phiên mới nhất
+                onSelectSession(sessions[0].id);
             } else {
-                // Không có phiên chat, tạo mới
+                // Nếu không có, tạo phiên mới
                 const newSessionRes = await fetch("http://localhost:4000/api/chat-sessions", {
                     method: "POST",
                     headers: {
@@ -83,16 +78,11 @@ export default function ChatSessions({
                     body: JSON.stringify({ user_id: userId, chatbot_id: 1 }),
                 });
 
-                if (!newSessionRes.ok) {
-                    throw new Error("Không thể tạo phiên chat mới");
-                }
-
                 const newSession = await newSessionRes.json();
                 onSelectSession(newSession.id);
-
-                // Chỉ cập nhật danh sách nếu có phiên mới
-                fetchSessions();
             }
+
+            fetchSessions(); // Cập nhật danh sách phiên chat
         } catch (error) {
             console.error("Lỗi khi lấy hoặc tạo phiên chat:", error);
         }
@@ -129,9 +119,10 @@ export default function ChatSessions({
             if (!res.ok) {
                 throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
             }
-            const newSession = await res.json(); // Lấy phiên chat mới
-            onSelectSession(newSession.id); // Chuyển khung chat sang phiên mới
-            fetchSessions(); // Cập nhật danh sách phiên chat
+
+            const newSession = await res.json(); //Lấy phiên chat mới
+            onSelectSession(newSession.id); //Chuyển khung chat sang phiên mới
+            fetchSessions(); //Cập nhật danh sách phiên chat
         } catch (error) {
             console.error("Lỗi khi tạo phiên chat:", error);
         }
@@ -151,7 +142,7 @@ export default function ChatSessions({
             if (!res.ok) {
                 throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
             }
-            fetchSessions(); // Cập nhật danh sách sau khi xóa
+            fetchSessions(); // 🔥 Cập nhật danh sách sau khi xóa
         } catch (error) {
             console.error("Lỗi khi xóa phiên chat:", error);
         } finally {
@@ -159,16 +150,9 @@ export default function ChatSessions({
         }
     };
 
-    const handleSelectSession = (sessionId: number) => {
-        setSelectedSessionId(sessionId);
-        onSelectSession(sessionId); // Load nội dung của phiên chat
-    };
-    
+
     return (
-        <div
-            className={`fixed top-0 left-0 h-screen shadow-md border-r border-gray-300 bg-gray-100 transition-all duration-300 ${isOpen ? "w-72 p-4" : "w-14 p-2"
-                }`}
-        >
+        <div className={`fixed top-0 left-0 h-screen shadow-md border-r border-gray-300 bg-gray-100 transition-all duration-300 ${isOpen ? "w-72 p-4" : "w-14 p-2"}`}>
             <div className="flex justify-between items-center mb-4">
                 <button
                     onClick={() => setIsOpen(!isOpen)}
@@ -200,8 +184,7 @@ export default function ChatSessions({
                         {sessions.map((session) => (
                             <li
                                 key={session.id}
-                                className={`p-3 bg-white rounded-md shadow-md flex justify-between items-center cursor-pointer hover:bg-gray-100 transition ${selectedSessionId === session.id ? "bg-blue-100" : ""
-                                    }`}
+                                className="p-3 bg-white rounded-md shadow-md flex justify-between items-center cursor-pointer hover:bg-gray-100 transition"
                                 onClick={() => onSelectSession(session.id)}
                             >
                                 <span className="flex-1">
@@ -214,21 +197,16 @@ export default function ChatSessions({
                                         </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                alert("Chức năng đổi tên chưa được triển khai!");
-                                            }}
-                                        >
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            alert("Chức năng đổi tên chưa được triển khai!");
+                                        }}>
                                             <Edit3 size={16} className="mr-2" /> Đổi tên
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                confirmDeleteSession(session.id);
-                                            }}
-                                            className="text-red-500"
-                                        >
+                                        <DropdownMenuItem onClick={(e) => {
+                                            e.stopPropagation();
+                                            confirmDeleteSession(session.id);
+                                        }} className="text-red-500">
                                             <Trash2 size={16} className="mr-2" /> Xóa
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -251,12 +229,8 @@ export default function ChatSessions({
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleteSessionId(null)}>
-                            Hủy
-                        </Button>
-                        <Button variant="destructive" onClick={handleDeleteSession}>
-                            Xóa
-                        </Button>
+                        <Button variant="outline" onClick={() => setDeleteSessionId(null)}>Hủy</Button>
+                        <Button variant="destructive" onClick={handleDeleteSession}>Xóa</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

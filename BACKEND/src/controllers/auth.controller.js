@@ -123,6 +123,22 @@ class AuthController {
             res.status(500).json({ message: 'Lỗi đăng nhập' });
         }
     }
+    //Đăng xuất tài khoản người dùng
+    async logout(req, res) {
+        try {
+            res.clearCookie('token', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Lax',
+                path: '/',
+            });
+            res.json({ message: 'Đăng xuất thành công' });
+        } catch (error) {
+            console.error('Lỗi đăng xuất:', error);
+            res.status(500).json({ message: 'Lỗi đăng xuất' });
+        }
+    }
+
 
     //Lấy thông tin người dùng
     async getProfile(req, res) {

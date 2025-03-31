@@ -75,14 +75,14 @@ class UserController {
     // Update user
     async updateUser(req, res) {
         try {
-            const { full_name, is_active } = req.body;
-            const updateData = { full_name, is_active };
+            const { email, full_name } = req.body;
+            const updateData = { email, full_name };
 
             const result = await User.update(req.params.id, updateData);
             if (result === 0) {
-                return res.status(404).json({ message: 'User not found' });
+                return res.status(404).json({ message: 'Không tìm thấy người dùng' });
             }
-            res.json({ message: 'User updated successfully' });
+            res.json({ message: 'Cập nhật thành công' });
         } catch (error) {
             res.status(500).json({ message: error.message });
         }

@@ -7,6 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Send, LogOut, CircleUser } from "lucide-react";
 import ChatSessions from "@/app/HistoryChat/page";
+import { logout } from "@/utils/logout";
 
 interface Message {
   id: number;
@@ -220,10 +221,9 @@ export default function ChatPage() {
   };
 
   const handleLogout = () => {
-    Cookies.remove("token");
-    Cookies.remove("dify_token");
-    router.push("/login");
+    logout();
   };
+
 
   return (
     <div className="flex h-screen bg-gray-100">

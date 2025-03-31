@@ -6,10 +6,11 @@ class Users {
         this.password_hash = user.password_hash;
         this.full_name = user.full_name;
         this.created_at = user.created_at;
+
         this.is_active = user.is_active;
     }
     static async findAll() {
-        const [rows] = await db.execute('SELECT * FROM Users');
+        const [rows] = await db.execute("SELECT id, email, full_name FROM Users WHERE role != 'admin'");
         return rows;
     }
 
@@ -35,8 +36,8 @@ class Users {
     }
 
     static async update(id, updateData) {
-        const sql = 'UPDATE Users SET ? WHERE id = ?';
-        const [result] = await db.execute(sql, [updateData, id]);
+        const sql = 'UPDATE Users SET email = ?, full_name = ? WHERE id = ?';
+        const [result] = await db.execute(sql, [updateData.email, updateData.full_name, id]);
         return result.affectedRows;
     }
 

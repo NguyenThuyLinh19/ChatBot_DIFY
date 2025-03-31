@@ -25,10 +25,10 @@ export default function LoginPage() {
             if (result.error) {
                 setError(result.error);
             } else if (result.success) {
-                // 1️⃣ Lưu `dify_token` vào Cookies
+                //Lưu `dify_token` vào Cookies
                 Cookies.set("dify_token", result.token, { expires: 1 });
 
-                // 2️⃣ Lấy token từ Cookies hoặc localStorage
+                //Lấy token từ Cookies hoặc localStorage
                 const token = Cookies.get("token") || localStorage.getItem("token");
 
                 if (!token) {
@@ -37,7 +37,7 @@ export default function LoginPage() {
                 }
 
                 try {
-                    // 3️⃣ Giải mã `token` để lấy `role`
+                    //Giải mã `token` để lấy `role`
                     const decoded: any = jwtDecode(token);
                     console.log("Decoded token:", decoded);
 
@@ -47,9 +47,9 @@ export default function LoginPage() {
                         throw new Error("Token không chứa role");
                     }
 
-                    // 4️⃣ Điều hướng dựa trên role
+                    //Điều hướng dựa trên role
                     if (decoded.role === "admin") {
-                        router.push("/admin/ManageChatbots");
+                        router.push("/admin/main");
                     } else {
                         router.push("/dashboard");
                     }

@@ -10,6 +10,7 @@ const chatbotRoutes = require('./routes/chatbot.routes');
 const chatSessionRoutes = require('./routes/chatSession.routes');
 const messageRoutes = require('./routes/message.routes');
 const statsRoutes = require('./routes/stats.routes');
+const knowledgeRoutes = require('./routes/knowledge.routes')
 const app = express();
 
 // Middleware
@@ -28,6 +29,7 @@ app.use('/api/chatbots', chatbotRoutes);
 app.use('/api/chat-sessions', chatSessionRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', statsRoutes)
+app.use("/api/knowledge", knowledgeRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

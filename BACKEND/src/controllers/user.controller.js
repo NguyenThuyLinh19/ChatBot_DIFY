@@ -100,6 +100,21 @@ class UserController {
             res.status(500).json({ message: error.message });
         }
     }
+
+    async searchUser(req, res) {
+        try {
+            const query = req.query.query;
+            if (!query) {
+                return res.status(400).json({ message: "Vui lòng nhập từ khóa tìm kiếm" });
+            }
+
+            const users = await User.searchUsers(query); // Gọi model để lấy dữ liệu
+            res.json(users);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: "Lỗi server" });
+        }
+    }
 }
 
 module.exports = new UserController();

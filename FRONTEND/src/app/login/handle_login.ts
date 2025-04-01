@@ -45,7 +45,7 @@ export async function handleLogin(formData: FormData) {
 
         return {
             success: true,
-            token: difyData.data.access_token, // ✅ Trả về token Dify nếu cần
+            token: difyData.data.access_token, //Trả về token Dify nếu cần
         };
     } catch (error: any) {
         return { error: error.message || "Có lỗi xảy ra trong quá trình đăng nhập" };

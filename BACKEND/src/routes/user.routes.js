@@ -12,10 +12,10 @@ const validateUser = [
 ];
 
 router.get('/getAllUser', userController.getAllUsers);
+router.get('/search', userController.searchUser);
 router.get('/:id', authMiddleware.authToken, userController.getUser);
 router.post('/', validateUser, userController.createUser);
 router.put('/updateUser/:id', userController.updateUser);
 router.delete('/deleteUser/:id', userController.deleteUser);
 router.get('/:id/fullname', authMiddleware.authToken, userController.getUserFullName)
-
 module.exports = router;

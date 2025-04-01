@@ -71,6 +71,16 @@ class ChatSessionController {
             res.status(500).json({ message: error.message });
         }
     }
+
+    async getAllChatSessions(req, res) {
+        try {
+            const sessions = await ChatSessions.getAllChatSessions();
+            res.json(sessions);
+        } catch (error) {
+            console.error("Lỗi API khi lấy danh sách phiên chat:", error);
+            res.status(500).json({ message: "Lỗi server" });
+        }
+    }
 }
 
 module.exports = new ChatSessionController();

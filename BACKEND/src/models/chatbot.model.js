@@ -1,54 +1,83 @@
 const db = require('../config/database');
 
 class Chatbots {
-    constructor(chatbots) {
-        this.id = chatbots.id;
-        this.user_id = chatbots.user_id;
-        this.name = chatbots.name;
-        this.description = chatbots.description;
-        this.dify_chatbot_id = chatbots.dify_chatbot_id;
-        this.status = chatbots.status;
-        this.configuration = chatbots.configuration;
-        this.create_at = chatbots.create_at;
-        this.update_at = chatbots.update_at;
+    constructor(chatbot) {
+        this.id = chatbot.id;
+        this.user_id = chatbot.user_id;
+        this.name = chatbot.name;
+        this.description = chatbot.description;
+        this.dify_chatbot_id = chatbot.dify_chatbot_id;
+        this.status = chatbot.status;
+        this.configuration = chatbot.configuration;
+        this.created_at = chatbot.created_at; // Đổi từ create_at -> created_at
+        this.updated_at = chatbot.updated_at; // Đổi từ update_at -> updated_at
     }
 
-    // Tạo chatbot mới
+    // 🔹 Tạo chatbot mới
     static async createChatbot(user_id, name, description, dify_chatbot_id, status, configuration) {
-        const query = `
-            INSERT INTO chatbots (user_id, name, description, dify_chatbot_id, status, configuration, create_at, update_at)
-            VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
-        `;
-        const [result] = await db.execute(query, [user_id, name, description, dify_chatbot_id, status, configuration]);
-        return result.insertId;
+        try {
+            const query = `
+                INSERT INTO Chatbots (user_id, name, description, dify_chatbot_id, status, configuration, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
+            `;
+            const [result] = await db.execute(query, [user_id, name, description, dify_chatbot_id, status, configuration]);
+            return result.insertId;
+        } catch (error) {
+            console.error("Lỗi khi tạo chatbot:", error);
+            throw error;
+        }
     }
 
-    // Lấy thông tin một chatbot theo ID
+    // 🔹 Lấy thông tin một chatbot theo ID
     static async getChatbotById(id) {
-        const query = 'SELECT * FROM chatbots WHERE id = ?';
-        const [rows] = await db.execute(query, [id]);
-        return rows.length ? rows[0] : null;
+        try {
+            const query = 'SELECT * FROM Chatbots WHERE id = ?';
+            const [rows] = await db.execute(query, [id]);
+            return rows.length ? rows[0] : null;
+        } catch (error) {
+            console.error("Lỗi khi lấy chatbot theo ID:", error);
+            throw error;
+        }
     }
 
-    // Lấy tất cả chatbot của một người dùng
+    // 🔹 Lấy tất cả chatbot của một người dùng
     static async getChatbotsByUser(user_id) {
-        const query = 'SELECT * FROM chatbots WHERE user_id = ? ORDER BY create_at DESC';
-        const [rows] = await db.execute(query, [user_id]);
-        return rows;
+        try {
+            const query = 'SELECT * FROM Chatbots WHERE user_id = ? ORDER BY created_at DESC';
+            const [rows] = await db.execute(query, [user_id]);
+            return rows;
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách chatbot:", error);
+            throw error;
+        }
     }
 
-    // Cập nhật thông tin chatbot
+    //Cập nhật thông tin chatbot
     static async updateChatbot(id, updateData) {
-        const query = 'UPDATE chatbots SET ? WHERE id = ?';
-        const [result] = await db.execute(query, [updateData, id]);
-        return result.affectedRows;
+        try {
+            const fields = Object.keys(updateData).map(field => `${field} = ?`).join(', ');
+            const values = Object.values(updateData);
+            values.push(id);
+
+            const query = `UPDATE Chatbots SET ${fields}, updated_at = NOW() WHERE id = ?`;
+            const [result] = await db.execute(query, values);
+            return result.affectedRows;
+        } catch (error) {
+            console.error("Lỗi khi cập nhật chatbot:", error);
+            throw error;
+        }
     }
 
-    // Xóa một chatbot theo ID
+    // 🔹 Xóa một chatbot theo ID
     static async deleteChatbot(id) {
-        const query = 'DELETE FROM chatbots WHERE id = ?';
-        const [result] = await db.execute(query, [id]);
-        return result.affectedRows;
+        try {
+            const query = 'DELETE FROM Chatbots WHERE id = ?';
+            const [result] = await db.execute(query, [id]);
+            return result.affectedRows;
+        } catch (error) {
+            console.error("Lỗi khi xóa chatbot:", error);
+            throw error;
+        }
     }
 }
 

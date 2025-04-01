@@ -13,23 +13,11 @@ const validateChatbot = [
     body('configuration').notEmpty().withMessage('Configuration is required')
 ];
 
-// Routes
-// Lấy danh sách chatbot của một người dùng
 router.get('/user/:user_id', authMiddleware.authToken, chatbotController.getChatbotsByUser);
-
-// Tạo chatbot mới
 router.post('/', authMiddleware.authToken, validateChatbot, chatbotController.createChatbot);
-
-// Lấy thông tin chatbot theo ID
 router.get('/:id', authMiddleware.authToken, chatbotController.getChatbot);
-
-// Cập nhật thông tin chatbot theo ID
 router.put('/:id', authMiddleware.authToken, chatbotController.updateChatbot);
-
-// Xóa chatbot theo ID
 router.delete('/:id', authMiddleware.authToken, chatbotController.deleteChatbot);
-
-// Chat với chatbot
 router.post('/ChatDify', chatbotController.ChatDify)
 
 module.exports = router;

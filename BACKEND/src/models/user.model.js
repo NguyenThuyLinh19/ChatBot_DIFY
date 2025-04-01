@@ -46,6 +46,17 @@ class Users {
         const [result] = await db.execute(sql, [id]);
         return result.affectedRows;
     }
+
+    static async searchUsers(query) {
+        try {
+            const [users] = await db.execute("SELECT id, email, full_name FROM Users WHERE (email LIKE ? OR full_name LIKE ?) AND role != 'admin'",
+                [`%${query}%`, `%${query}%`]
+            );
+            return users;
+        } catch (error) {
+            throw error;
+        }
+    };
 }
 
 module.exports = Users;

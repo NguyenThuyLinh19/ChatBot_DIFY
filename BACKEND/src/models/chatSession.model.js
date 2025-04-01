@@ -49,6 +49,34 @@ class ChatSessions {
         const [result] = await db.execute(query, [session_id]);
         return result.affectedRows;
     }
+
+    static async getAllChatSessions() {
+        try {
+            const query = `
+                SELECT 
+                    cs.id, 
+                    u.full_name AS full_name, 
+                    c.name AS chatbot_name, 
+                    cs.start_time, 
+                    cs.end_time, 
+                    cs.status
+                FROM ChatSessions cs
+                LEFT JOIN Users u ON cs.user_id = u.id
+                LEFT JOIN Chatbots c ON cs.chatbot_id = c.id
+                ORDER BY cs.start_time DESC
+            `;
+            const [rows] = await db.execute(query);
+
+            // Đảm bảo rows luôn là mảng
+            return Array.isArray(rows) ? rows : [];
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách phiên chat:", error);
+            throw error;
+        }
+    }
+
+
+
 }
 
 module.exports = ChatSessions;

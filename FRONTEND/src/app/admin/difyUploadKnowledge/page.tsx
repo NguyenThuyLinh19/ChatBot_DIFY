@@ -5,21 +5,64 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 const KnowledgeUpload: React.FC = () => {
-    const [files, setFiles] = useState<File[]>([]);
+    const [file, setFile] = useState<File | null>(null);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
-            setFiles((prevFiles) => [...prevFiles, ...Array.from(event.target.files)]);
+            if (event.target.files.length > 1) {
+                setErrorMessage("Chỉ được up 1 file 1 lúc.");
+                setFile(null);
+            } else {
+                setErrorMessage("");
+                setSuccessMessage("");
+                setFile(event.target.files[0]);
+            }
         }
     };
 
-    const removeFile = (index: number) => {
-        setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+    const handleRemoveFile = () => {
+        setFile(null);
+        setErrorMessage("");
     };
 
-    const handleUpload = (): void => {
-        console.log("Uploading files:", files);
-        // Gửi files lên backend xử lý
+    const handleUpload = async (): Promise<void> => {
+        if (!file) return;
+
+        // Bật hiệu ứng loading
+        setLoading(true);
+
+        // Giả lập hiệu ứng load 2 giây
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await fetch("http://localhost:4000/api/knowledge/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                setErrorMessage("Upload failed: " + errorText);
+                setLoading(false);
+                return;
+            }
+
+            const data = await response.json();
+            console.log("Upload success:", data);
+            setSuccessMessage("Upload thành công!");
+            setFile(null);
+        } catch (error) {
+            console.error("Error uploading file:", error);
+            setErrorMessage("Error uploading file: " + error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -27,39 +70,30 @@ const KnowledgeUpload: React.FC = () => {
             <Card className="w-full max-w-md p-4 text-center">
                 <CardContent className="flex flex-col gap-4 items-center">
                     <label className="w-full p-6 border-2 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50">
-                        <input
-                            type="file"
-                            multiple
-                            className="hidden"
-                            onChange={handleFileChange}
-                        />
+                        <input type="file" className="hidden" onChange={handleFileChange} />
                         <Upload className="w-10 h-10 text-gray-500 mx-auto" />
                         <p className="text-sm text-gray-500">Kéo thả hoặc chọn file</p>
                     </label>
-                    {files.length > 0 && (
-                        <div className="w-full border-t pt-4">
-                            <ul className="space-y-2">
-                                {files.map((file, index) => (
-                                    <li
-                                        key={index}
-                                        className="flex justify-between items-center p-2 bg-gray-200 rounded-lg"
-                                    >
-                                        <span className="truncate w-4/5">{file.name}</span>
-                                        <button onClick={() => removeFile(index)}>
-                                            <X className="w-5 h-5 text-red-500" />
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
+                    {file && (
+                        <div className="w-full border-t pt-4 flex justify-between items-center">
+                            <span className="truncate">{file.name}</span>
+                            <button onClick={handleRemoveFile}>
+                                <X className="w-5 h-5 text-red-500" />
+                            </button>
                         </div>
                     )}
-                    <Button onClick={handleUpload} disabled={files.length === 0}>
-                        Upload
+                    <p className="text-sm text-gray-500">
+                        Chỉ hỗ trợ định dạng: TXT, Markdown, MDX, PDF, HTML, XLSX, XLS, DOCX, CSV, MD, HTM.
+                    </p>
+                    {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
+                    {successMessage && <p className="text-sm text-green-500">{successMessage}</p>}
+                    <Button onClick={handleUpload} disabled={!file || loading}>
+                        {loading ? "Loading..." : "Upload"}
                     </Button>
                 </CardContent>
             </Card>
         </div>
     );
-}
+};
 
 export default KnowledgeUpload;

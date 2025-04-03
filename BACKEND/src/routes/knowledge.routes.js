@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const KnowledgeController = require('../controllers/knowledge.controller');
+const uploadController = require('../controllers/knowledge.controller');
 
-// Cấu hình Multer để lưu file vào bộ nhớ (memory storage)
-const upload = multer({ storage: multer.memoryStorage() });
-router.post("/upload", KnowledgeController.uploadKnowledge);
+const upload = multer({ storage: multer.memoryStorage() }); // Lưu file trong bộ nhớ
+
+router.post('/upload', upload.single('file'), uploadController.uploadFile);
 
 module.exports = router;

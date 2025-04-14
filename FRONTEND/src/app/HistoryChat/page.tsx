@@ -188,7 +188,7 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
                                 onClick={() => onSelectSession(session.id)}
                             >
                                 <span className="flex-1">
-                                    Chat {session.id} - {new Date(session.start_time).toLocaleString()}
+                                    {session.id} - {new Date(session.start_time).toLocaleString()}
                                 </span>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

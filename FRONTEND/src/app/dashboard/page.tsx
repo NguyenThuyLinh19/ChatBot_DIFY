@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import { Send, LogOut, CircleUser } from "lucide-react";
 import ChatSessions from "@/app/HistoryChat/page";
 import { logout } from "@/utils/logout";
+import { motion } from "framer-motion";
 
 interface Message {
   id: number;
@@ -238,6 +239,27 @@ export default function ChatPage() {
           setIsOpen={setIsSidebarOpen}
         />
       )}
+      {/* Sidebar toggle button */}
+      <button
+        className="absolute top-4 left-4 z-50 bg-white shadow-lg rounded-full p-2 hover:scale-105 transition-transform"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      >
+        <motion.div
+          initial={{ rotate: 0 }}
+          animate={{ rotate: isSidebarOpen ? 0 : 180 }}
+          transition={{ duration: 0.3 }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 text-blue-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </motion.div>
+      </button>
 
       {/* Khung chat chính */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${isSidebarOpen ? "ml-72" : "ml-14"} mr-8`}>
@@ -281,16 +303,35 @@ export default function ChatPage() {
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 scrollbar-hidden">
             <div className="flex flex-col gap-2">
               {messages.map((msg, index) => (
-                <div key={index} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in`}>
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                >
                   <div
-                    className={`px-4 py-2 rounded-xl shadow-md max-w-[75%] break-words ${msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-300 text-black"
+                    className={`px-4 py-2 rounded-xl shadow-md max-w-[75%] break-words ${msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
                       }`}
                   >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
                   </div>
-                </div>
+                </motion.div>
               ))}
-              {botTyping && <div className="text-gray-500 animate-pulse">Đang soạn tin...</div>}
+
+              {botTyping && (
+                <motion.div
+                  className="text-gray-500 flex gap-1 items-center"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <span className="dot-flashing" />
+                  <span className="dot-flashing" />
+                  <span className="dot-flashing" />
+                </motion.div>
+              )}
+
               <div ref={chatEndRef} />
             </div>
           </div>

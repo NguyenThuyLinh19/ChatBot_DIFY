@@ -51,7 +51,7 @@ const uploadFile = async (req, res) => {
         });
 
         // Gọi API thứ hai để upload file kèm dữ liệu
-        const apiUrl = 'http://localhost/v1/datasets/dec9386d-05a7-4941-9563-dc8196953247/document/create-by-file';
+        const apiUrl = 'http://localhost/v1/datasets/51b9abec-b580-427a-9301-369f9cbf69b9/document/create-by-file';
 
         const response = await fetch(apiUrl, {
             method: 'POST',

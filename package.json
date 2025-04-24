@@ -4,5 +4,8 @@
   },
   "scripts": {
     "dev": "concurrently \"cd backend && npm start\" \" cd frontend && npm run dev \""
+  },
+  "dependencies": {
+    "framer-motion": "^12.7.4"
   }
 }

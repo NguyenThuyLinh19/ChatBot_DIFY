@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { Menu, MoreVertical, Plus, Trash2, X, Edit3 } from "lucide-react";
+import { Menu, MoreVertical, Plus, Trash2, X, Edit3, MessageCircle } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -38,25 +38,20 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleteSessionId, setDeleteSessionId] = useState<number | null>(null);
+    const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
     const hasCreatedSession = useRef(false);
 
     useEffect(() => {
-        if (userId && token) {
-            fetchOrCreateSession();
-        }
-    }, [userId, token]); // Gọi khi userId hoặc token thay đổi
-
+        if (userId && token) fetchOrCreateSession();
+    }, [userId, token]);
 
     useEffect(() => {
-        if (userId && token) {
-            fetchSessions(); //Gọi lại khi user thay đổi để cập nhật danh sách
-        }
+        if (userId && token) fetchSessions();
     }, [userId]);
 
-
     const fetchOrCreateSession = async () => {
-        if (hasCreatedSession.current) return; // Ngăn gọi API nhiều lần
-        hasCreatedSession.current = true; // Đánh dấu đã tạo phiên
+        if (hasCreatedSession.current) return;
+        hasCreatedSession.current = true;
 
         try {
             const res = await fetch(`http://localhost:4000/api/chat-sessions/user/${userId}`, {
@@ -65,10 +60,9 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
 
             const sessions = await res.json();
             if (sessions.length > 0) {
-                // Nếu có phiên chat, chọn phiên mới nhất
                 onSelectSession(sessions[0].id);
+                setSelectedSessionId(sessions[0].id);
             } else {
-                // Nếu không có, tạo phiên mới
                 const newSessionRes = await fetch("http://localhost:4000/api/chat-sessions", {
                     method: "POST",
                     headers: {
@@ -77,26 +71,23 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
                     },
                     body: JSON.stringify({ user_id: userId, chatbot_id: 1 }),
                 });
-
                 const newSession = await newSessionRes.json();
                 onSelectSession(newSession.id);
+                setSelectedSessionId(newSession.id);
             }
 
-            fetchSessions(); // Cập nhật danh sách phiên chat
+            fetchSessions();
         } catch (error) {
             console.error("Lỗi khi lấy hoặc tạo phiên chat:", error);
         }
     };
-
 
     const fetchSessions = async () => {
         try {
             const res = await fetch(`http://localhost:4000/api/chat-sessions/user/${userId}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) {
-                throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
-            }
+            if (!res.ok) throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
             const data = await res.json();
             setSessions(data || []);
         } catch (error) {
@@ -116,21 +107,18 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
                 },
                 body: JSON.stringify({ user_id: userId, chatbot_id: 1 }),
             });
-            if (!res.ok) {
-                throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
-            }
+            if (!res.ok) throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
 
-            const newSession = await res.json(); //Lấy phiên chat mới
-            onSelectSession(newSession.id); //Chuyển khung chat sang phiên mới
-            fetchSessions(); //Cập nhật danh sách phiên chat
+            const newSession = await res.json();
+            onSelectSession(newSession.id);
+            setSelectedSessionId(newSession.id);
+            fetchSessions();
         } catch (error) {
             console.error("Lỗi khi tạo phiên chat:", error);
         }
     };
 
-    const confirmDeleteSession = (sessionId: number) => {
-        setDeleteSessionId(sessionId);
-    };
+    const confirmDeleteSession = (sessionId: number) => setDeleteSessionId(sessionId);
 
     const handleDeleteSession = async () => {
         if (deleteSessionId === null) return;
@@ -139,10 +127,8 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
                 method: "DELETE",
                 headers: { Authorization: `Bearer ${token}` },
             });
-            if (!res.ok) {
-                throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
-            }
-            fetchSessions(); // 🔥 Cập nhật danh sách sau khi xóa
+            if (!res.ok) throw new Error(`Lỗi API: ${res.status} - ${res.statusText}`);
+            fetchSessions();
         } catch (error) {
             console.error("Lỗi khi xóa phiên chat:", error);
         } finally {
@@ -150,63 +136,76 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
         }
     };
 
-
     return (
-        <div className={`fixed top-0 left-0 h-screen shadow-md border-r border-gray-300 bg-gray-100 transition-all duration-300 ${isOpen ? "w-72 p-4" : "w-14 p-2"}`}>
+        <aside className={`fixed top-0 left-0 h-screen bg-white border-r shadow-md transition-all duration-300 z-10 ${isOpen ? "w-72 p-4" : "w-16 p-2"}`}>
             <div className="flex justify-between items-center mb-4">
-                <button
+                {/* <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="p-2 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition"
+                    className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                     title={isOpen ? "Đóng sidebar" : "Mở sidebar"}
                 >
                     {isOpen ? <X size={20} /> : <Menu size={20} />}
-                </button>
-                {isOpen && <h2 className="text-lg font-semibold text-gray-700">Lịch sử trò chuyện</h2>}
+                </button> */}
+                {isOpen && (
+                    <h2 className="text-lg font-semibold text-gray-800 ml-auto">Lịch sử</h2>
+                )}
+
             </div>
 
             {isOpen && (
                 <button
                     onClick={handleCreateSession}
-                    className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition w-full mb-4"
-                    title="Thêm phiên chat"
+                    className="flex items-center justify-center gap-2 p-2 w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-sm mb-4"
                 >
-                    <Plus size={18} className="inline-block mr-2" /> Thêm phiên chat
+                    <Plus size={18} /> Phiên mới
                 </button>
             )}
 
-            {isOpen ? (
+            {isOpen && (
                 loading ? (
-                    <p className="text-gray-500">Đang tải...</p>
+                    <p className="text-gray-500 text-sm">Đang tải...</p>
                 ) : sessions.length === 0 ? (
-                    <p className="text-gray-500">Không có phiên chat nào.</p>
+                    <p className="text-gray-500 text-sm">Chưa có phiên nào.</p>
                 ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-2 overflow-y-auto max-h-[calc(100vh-180px)] pr-1 scrollbar-thin scrollbar-thumb-gray-300">
                         {sessions.map((session) => (
                             <li
                                 key={session.id}
-                                className="p-3 bg-white rounded-md shadow-md flex justify-between items-center cursor-pointer hover:bg-gray-100 transition"
-                                onClick={() => onSelectSession(session.id)}
+                                className={`p-3 rounded-xl border flex items-center justify-between group cursor-pointer transition-all duration-200 ${selectedSessionId === session.id ? "bg-blue-100 border-blue-400 shadow-inner" : "bg-gray-50 hover:bg-gray-100 border-gray-200"}`}
+                                onClick={() => {
+                                    onSelectSession(session.id);
+                                    setSelectedSessionId(session.id);
+                                }}
                             >
-                                <span className="flex-1">
-                                    {session.id} - {new Date(session.start_time).toLocaleString()}
-                                </span>
+                                <div className="flex items-center gap-2 text-sm text-gray-800">
+                                    <MessageCircle size={16} className="text-blue-500" />
+                                    <span className="truncate max-w-[150px]">#{session.id} - {new Date(session.start_time).toLocaleDateString()}</span>
+                                </div>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <button className="p-2 hover:bg-gray-200 rounded-full">
-                                            <MoreVertical size={18} />
+                                        <button
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="p-1 hover:bg-gray-200 rounded-full"
+                                        >
+                                            <MoreVertical size={16} />
                                         </button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={(e) => {
-                                            e.stopPropagation();
-                                            alert("Chức năng đổi tên chưa được triển khai!");
-                                        }}>
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                alert("Chức năng đổi tên chưa được hỗ trợ.");
+                                            }}
+                                        >
                                             <Edit3 size={16} className="mr-2" /> Đổi tên
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={(e) => {
-                                            e.stopPropagation();
-                                            confirmDeleteSession(session.id);
-                                        }} className="text-red-500">
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                confirmDeleteSession(session.id);
+                                            }}
+                                            className="text-red-600"
+                                        >
                                             <Trash2 size={16} className="mr-2" /> Xóa
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -215,17 +214,14 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
                         ))}
                     </ul>
                 )
-            ) : (
-                <p className="text-gray-500 text-center"></p>
             )}
 
-            {/* Modal xác nhận xóa */}
             <Dialog open={deleteSessionId !== null} onOpenChange={() => setDeleteSessionId(null)}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Xác nhận xóa</DialogTitle>
                         <DialogDescription>
-                            Bạn có chắc chắn muốn xóa phiên chat này không? Hành động này không thể hoàn tác.
+                            Bạn chắc chắn muốn xóa phiên chat này? Hành động này không thể hoàn tác.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -234,6 +230,6 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </aside>
     );
 }

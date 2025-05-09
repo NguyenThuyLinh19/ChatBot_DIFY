@@ -331,7 +331,6 @@ export default function ChatPage() {
                   <span className="dot-flashing" />
                 </motion.div>
               )}
-
               <div ref={chatEndRef} />
             </div>
           </div>

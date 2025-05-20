@@ -179,7 +179,7 @@ export default function ChatSessions({ token, userId, onSelectSession, isOpen, s
                             >
                                 <div className="flex items-center gap-2 text-sm text-gray-800">
                                     <MessageCircle size={16} className="text-blue-500" />
-                                    <span className="truncate max-w-[150px]">#{session.id} - {new Date(session.start_time).toLocaleDateString()}</span>
+                                    <span className="truncate max-w-[150px]">{session.id} New conversation </span>
                                 </div>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>

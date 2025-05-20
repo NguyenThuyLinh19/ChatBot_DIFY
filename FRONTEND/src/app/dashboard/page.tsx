@@ -111,53 +111,139 @@ export default function ChatPage() {
     setBotTyping(true);
 
     try {
-      const difyAuthToken = Cookies.get("dify_token");
-      const res = await fetch("http://localhost:4000/api/chatbots/ChatDify", {
+      const response = await fetch("http://localhost/v1/chat-messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${difyAuthToken}`,
+          "Authorization": "Bearer app-sxuABRps1LUgPhehxBseTYOM",
         },
         body: JSON.stringify({
-          session_id: selectedSessionId,
-          message: input,
+          "inputs": {},
+          "query": input,
+          "response_mode": "streaming",
+          "user": "abc-123"
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`Lỗi API: ${res.status} - ${await res.text()}`);
+      if (!response.ok) {
+        throw new Error(`Lỗi API: ${response.status} - ${await response.text()}`);
       }
 
-      const responseData = await res.json();
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
 
-      if (!responseData || !Array.isArray(responseData.data)) {
-        console.error("Dữ liệu API không hợp lệ:", responseData);
-        setBotTyping(false);
-        return;
+      if (!reader) {
+        throw new Error('Không thể đọc response stream');
       }
 
-      const dataArray = responseData.data;
-      const workflowEvent = dataArray.find((event: any) => event.event === "workflow_finished");
-
-      if (!workflowEvent || !workflowEvent.data?.outputs?.answer) {
-        console.error("Không tìm thấy câu trả lời từ chatbot:", responseData);
-        setBotTyping(false);
-        return;
-      }
-
-      const finalAnswer = workflowEvent.data.outputs.answer;
-
+      // Tạo message ban đầu cho bot
+      const botMessageId = Date.now() + 1;
       const botMessage: Message = {
-        id: Date.now() + 1,
+        id: botMessageId,
         sender: "bot",
-        text: finalAnswer,
+        text: "",
         timestamp: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, botMessage]);
-      saveMessages(finalAnswer, "assistant", selectedSessionId);
+
+      // Lưu trữ tất cả các event nhận được từ API
+      const eventsList: any[] = [];
+
+      // Đọc stream data từ response
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Chuyển đổi dữ liệu binary thành text
+        const chunk = decoder.decode(value, { stream: true });
+
+        try {
+          // Xử lý các dòng dữ liệu từ server-sent events
+          const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const jsonStr = line.substring(6).trim();  // Bỏ 'data: ' prefix
+
+              if (jsonStr === '[DONE]') continue;
+
+              try {
+                const eventData = JSON.parse(jsonStr);
+
+                // Lưu event vào danh sách
+                eventsList.push(eventData);
+
+                // Nếu là event workflow_finished, lấy câu trả lời và hiển thị
+                if (eventData.event === "workflow_finished" &&
+                  eventData.data &&
+                  eventData.data.outputs &&
+                  eventData.data.outputs.answer) {
+
+                  const answer = eventData.data.outputs.answer;
+                  console.log("answer: ", answer);
+
+                  // Cập nhật tin nhắn bot
+                  setMessages((prevMessages) =>
+                    prevMessages.map(msg =>
+                      msg.id === botMessageId
+                        ? { ...msg, text: answer }
+                        : msg
+                    )
+                  );
+
+                  // Lưu câu trả lời vào database
+                  saveMessages(answer, "assistant", selectedSessionId);
+                }
+              } catch (e) {
+                console.error("Lỗi khi parse JSON từ stream:", e, jsonStr);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Lỗi khi xử lý chunk:", e);
+        }
+      }
+
+      // Double-check xem đã tìm thấy workflow_finished event chưa
+      if (!eventsList.some(e => e.event === "workflow_finished")) {
+        // Nếu không tìm thấy, thử tìm từ tất cả events đã nhận
+        const workflowFinished = eventsList.find(e => e.event === "workflow_finished");
+
+        if (workflowFinished &&
+          workflowFinished.data &&
+          workflowFinished.data.outputs &&
+          workflowFinished.data.outputs.answer) {
+
+          const answer = workflowFinished.data.outputs.answer;
+
+          // Cập nhật tin nhắn bot
+          setMessages((prevMessages) =>
+            prevMessages.map(msg =>
+              msg.id === botMessageId
+                ? { ...msg, text: answer }
+                : msg
+            )
+          );
+
+          // Lưu câu trả lời vào database
+          saveMessages(answer, "assistant", selectedSessionId);
+        } else {
+          console.error("Không tìm thấy event workflow_finished hoặc không có câu trả lời");
+        }
+      }
     } catch (error) {
       console.error("Lỗi khi gửi tin nhắn:", error);
+
+      // Thêm tin nhắn lỗi cho người dùng
+      const errorMessage: Message = {
+        id: Date.now() + 2,
+        sender: "bot",
+        text: "Xin lỗi, đã xảy ra lỗi khi xử lý tin nhắn của bạn. Vui lòng thử lại sau.",
+        timestamp: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setBotTyping(false);
     }
@@ -311,7 +397,7 @@ export default function ChatPage() {
                   className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`px-4 py-2 rounded-xl shadow-md max-w-[75%] break-words ${msg.sender === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
+                    className={`px-4 py-2 rounded-xl shadow-md max-w-[75%] break-words prose prose-sm max-w-full dark:prose-invert ${msg.sender !== "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
                       }`}
                   >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>

@@ -41,47 +41,48 @@ const ChatSessionTable: React.FC = () => {
 
     return (
         <div className="p-6 bg-white shadow-lg rounded-lg">
-            <h2 className="text-xl font-bold mb-4">Danh sách phiên chat</h2>
-            <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr className="bg-gray-200">
-                        <th className="border p-2">ID</th>
-                        <th className="border p-2">Người dùng</th>
-                        <th className="border p-2">Chatbot</th>
-                        <th className="border p-2">Bắt đầu</th>
-                        <th className="border p-2">Kết thúc</th>
-                        <th className="border p-2">Trạng thái</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {Array.isArray(sessions) && sessions.length > 0 ? (
-                        sessions.map((session) => (
-                            <tr key={session.id} className="hover:bg-gray-100">
-                                <td className="border p-2 text-center">{session.id}</td>
-                                <td className="border p-2">{session.full_name}</td>
-                                <td className="border p-2">{session.chatbot_name}</td>
-                                <td className="border p-2">{new Date(session.start_time).toLocaleString()}</td>
-                                <td className="border p-2">
-                                    {session.end_time ? new Date(session.end_time).toLocaleString() : "Đang diễn ra"}
-                                </td>
-                                <td
-                                    className={`border p-2 text-center font-bold ${session.status === "active" ? "text-green-500" : "text-red-500"
-                                        }`}
-                                >
-                                    {session.status}
+            <div className="overflow-y-auto max-h-[495px]">
+                <table className="w-full border-collapse border border-gray-300">
+                    <thead>
+                        <tr className="bg-gray-200">
+                            <th className="border p-2">ID</th>
+                            <th className="border p-2">Người dùng</th>
+                            <th className="border p-2">Chatbot</th>
+                            <th className="border p-2">Bắt đầu</th>
+                            <th className="border p-2">Kết thúc</th>
+                            <th className="border p-2">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {Array.isArray(sessions) && sessions.length > 0 ? (
+                            sessions.map((session) => (
+                                <tr key={session.id} className="hover:bg-gray-100">
+                                    <td className="border p-2 text-center">{session.id}</td>
+                                    <td className="border p-2">{session.full_name}</td>
+                                    <td className="border p-2">{session.chatbot_name}</td>
+                                    <td className="border p-2">{new Date(session.start_time).toLocaleString()}</td>
+                                    <td className="border p-2">
+                                        {session.end_time ? new Date(session.end_time).toLocaleString() : "Đang diễn ra"}
+                                    </td>
+                                    <td
+                                        className={`border p-2 text-center font-bold ${session.status === "active" ? "text-green-500" : "text-red-500"
+                                            }`}
+                                    >
+                                        {session.status}
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan={6} className="border p-4 text-center">
+                                    Không có dữ liệu
                                 </td>
                             </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan={6} className="border p-4 text-center">
-                                Không có dữ liệu
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
+                        )}
+                    </tbody>
 
-            </table>
+                </table>
+            </div>
         </div>
     );
 };

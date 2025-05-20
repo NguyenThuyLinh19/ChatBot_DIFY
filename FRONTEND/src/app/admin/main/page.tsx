@@ -6,7 +6,7 @@ import UserManagement from '../userManagement/page';
 import { logout } from "@/utils/logout";
 import ChatSessionTable from '../chatbotManagement/page';
 import KnowledgeUpload from '../difyUploadKnowledge/page';
-import { Sidebar } from 'lucide-react';
+// import { Sidebar } from 'lucide-react';
 
 const AdminDashboard = () => {
     const [activePage, setActivePage] = useState('Dashboard');

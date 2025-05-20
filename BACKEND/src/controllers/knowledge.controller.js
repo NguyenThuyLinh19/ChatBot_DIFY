@@ -2,26 +2,50 @@ const FormData = require('form-data');
 require('dotenv').config();
 const fetch = require('node-fetch');
 
+const DATASET_MAP = {
+    register: {
+        id: process.env.DATASET_REGISTER_ID,
+        token: process.env.DATASET_REGISTER_TOKEN,
+    },
+    pricing: {
+        id: process.env.DATASET_PRICING_ID,
+        token: process.env.DATASET_PRICING_TOKEN,
+    },
+    referral: {
+        id: process.env.DATASET_REFERRAL_ID,
+        token: process.env.DATASET_REFERRAL_TOKEN,
+    },
+    admission: {
+        id: process.env.DATASET_ADMISSION_ID,
+        token: process.env.DATASET_ADMISSION_TOKEN,
+    },
+    insurance: {
+        id: process.env.DATASET_INSURANCE_ID,
+        token: process.env.DATASET_INSURANCE_TOKEN,
+    },
+    'medical-docs': {
+        id: process.env.DATASET_MEDICALDOCS_ID,
+        token: process.env.DATASET_MEDICALDOCS_TOKEN,
+    },
+};
+
 const uploadFile = async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        // Chuyển đổi encoding của tên file từ latin1 sang utf8
+        const category = req.body.category;
+        if (!category || !DATASET_MAP[category]) {
+            return res.status(400).json({ error: 'Invalid or missing category' });
+        }
+
+        const { id: datasetId, token } = DATASET_MAP[category];
+
         const fileName = Buffer.from(req.file.originalname, 'latin1').toString('utf8');
 
-        // Log thông tin file nhận từ frontend
-        console.log("Received file:", {
-            originalname: fileName,
-            mimetype: req.file.mimetype,
-            size: req.file.size
-        });
-
-        // Tạo form-data để gửi đến API thứ hai
         const formData = new FormData();
 
-        // Dữ liệu JSON cho trường 'data'
         const dataObject = {
             indexing_technique: "high_quality",
             process_rule: {
@@ -39,44 +63,33 @@ const uploadFile = async (req, res) => {
             }
         };
 
-        // Thêm trường 'data' với nội dung JSON
-        formData.append('data', JSON.stringify(dataObject), {
-            contentType: 'application/json'
-        });
+        formData.append('data', JSON.stringify(dataObject), { contentType: 'application/json' });
+        formData.append('file', req.file.buffer, { filename: fileName, contentType: req.file.mimetype });
 
-        // Thêm trường 'file' với file nhận được từ client
-        formData.append('file', req.file.buffer, {
-            filename: fileName,
-            contentType: req.file.mimetype
-        });
-
-        // Gọi API thứ hai để upload file kèm dữ liệu
-        const apiUrl = 'http://localhost/v1/datasets/51b9abec-b580-427a-9301-369f9cbf69b9/document/create-by-file';
+        const apiUrl = `http://localhost/v1/datasets/${datasetId}/document/create-by-file`;
 
         const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
                 ...formData.getHeaders(),
-                Authorization: 'Bearer dataset-9BsVCS5Ufl6zYUmzMzURB1n5'
+                Authorization: `Bearer ${token}`
             },
             body: formData
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("API Error:", errorText);
+            console.error('Upload API error:', errorText);
             return res.status(response.status).json({ error: errorText });
         }
 
         const result = await response.json();
-
-        // Trả về thông báo thành công
-        res.json({ message: 'Thành công', result });
-
+        res.json({ message: 'Upload thành công', result });
     } catch (error) {
         console.error('Upload error:', error);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 };
+
 
 module.exports = { uploadFile };

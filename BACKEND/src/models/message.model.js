@@ -14,6 +14,17 @@ class Message {
         const [messages] = await db.execute(query, [session_id]);
         return messages;
     }
+
+    // Xóa cặp tin nhắn của người dùng và chatbot trong cùng một session
+    static async deletePair(session_id, userContent, assistantContent) {
+        const query = `
+        DELETE FROM Messages 
+        WHERE session_id = ? 
+          AND ((role = 'user' AND content = ?) OR (role = 'assistant' AND content = ?))
+    `;
+        await db.execute(query, [session_id, userContent, assistantContent]);
+        return { success: true };
+    }
 }
 
 module.exports = Message;

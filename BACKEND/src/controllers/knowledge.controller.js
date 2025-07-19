@@ -5,27 +5,27 @@ const fetch = require('node-fetch');
 const DATASET_MAP = {
     register: {
         id: process.env.DATASET_REGISTER_ID,
-        token: process.env.DATASET_REGISTER_TOKEN,
+        token: process.env.DATASET_TOKEN,
     },
     pricing: {
         id: process.env.DATASET_PRICING_ID,
-        token: process.env.DATASET_PRICING_TOKEN,
+        token: process.env.DATASET_TOKEN,
     },
     referral: {
         id: process.env.DATASET_REFERRAL_ID,
-        token: process.env.DATASET_REFERRAL_TOKEN,
+        token: process.env.DATASET_TOKEN,
     },
     admission: {
         id: process.env.DATASET_ADMISSION_ID,
-        token: process.env.DATASET_ADMISSION_TOKEN,
+        token: process.env.DATASET_TOKEN,
     },
     insurance: {
         id: process.env.DATASET_INSURANCE_ID,
-        token: process.env.DATASET_INSURANCE_TOKEN,
+        token: process.env.DATASET_TOKEN,
     },
     'medical-docs': {
         id: process.env.DATASET_MEDICALDOCS_ID,
-        token: process.env.DATASET_MEDICALDOCS_TOKEN,
+        token: process.env.DATASET_TOKEN,
     },
 };
 

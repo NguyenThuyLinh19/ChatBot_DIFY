@@ -149,6 +149,7 @@ export default function ChatPage() {
 
       // Lưu trữ tất cả các event nhận được từ API
       const eventsList: any[] = [];
+      console.log(eventsList);
 
       // Đọc stream data từ response
       while (true) {

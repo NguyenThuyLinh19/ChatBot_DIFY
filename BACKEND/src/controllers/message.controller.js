@@ -30,6 +30,21 @@ class MessageController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    // Xóa cặp tin nhắn của user và assistant trong cùng một session
+    static async deleteMessagePair(req, res) {
+        try {
+            const { session_id, user_content, assistant_content } = req.body;
+            if (!session_id || !user_content || !assistant_content) {
+                return res.status(400).json({ error: 'Thiếu thông tin bắt buộc' });
+            }
+
+            await Message.deletePair(session_id, user_content, assistant_content);
+            res.status(200).json({ message: 'Đã xóa cặp tin nhắn thành công' });
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = MessageController;

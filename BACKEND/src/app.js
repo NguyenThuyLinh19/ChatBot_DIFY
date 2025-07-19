@@ -11,6 +11,9 @@ const chatSessionRoutes = require('./routes/chatSession.routes');
 const messageRoutes = require('./routes/message.routes');
 const statsRoutes = require('./routes/stats.routes');
 const knowledgeRoutes = require('./routes/knowledge.routes')
+const feedbackRoutes = require('./routes/feedback.routes')
+const difyRoutes = require('./routes/dify.routes')
+
 const app = express();
 
 // Middleware
@@ -29,9 +32,11 @@ app.use('/api/chatbots', chatbotRoutes);
 app.use('/api/chat-sessions', chatSessionRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/admin', statsRoutes)
-app.use("/api/knowledge", knowledgeRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/feedback', feedbackRoutes)
+app.use("/api/dify", difyRoutes);
 
-// Error handling middleware
+// Error handling middlewares
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ message: 'Something went wrong!' });

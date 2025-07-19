@@ -13,8 +13,6 @@ const validateMessage = [
 
 //Lưu tin nhắn
 router.post('/', authMiddleware.authToken, validateMessage, messageController.saveMessage);
-
-//Lấy danh sách message theo session
 router.get('/session/:session_id', authMiddleware.authToken, messageController.getMessages);
-
+router.post('/delete', messageController.deleteMessagePair);
 module.exports = router;

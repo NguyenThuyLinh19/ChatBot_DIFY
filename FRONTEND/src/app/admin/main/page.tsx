@@ -1,11 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { FaUser, FaRobot, FaCog, FaSignOutAlt, FaChartPie } from 'react-icons/fa';
+import { FaUser, FaRobot, FaCog, FaSignOutAlt, FaChartPie, FaCommentAlt } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserManagement from '../userManagement/page';
 import { logout } from "@/utils/logout";
 import ChatSessionTable from '../chatbotManagement/page';
 import KnowledgeUpload from '../difyUploadKnowledge/page';
+import FeedbackManagement from '../feedbackManagement/page';
 // import { Sidebar } from 'lucide-react';
 
 const AdminDashboard = () => {
@@ -53,6 +54,9 @@ const AdminDashboard = () => {
                 return <UserManagement />;
             case 'Quản lý chatbot':
                 return <ChatSessionTable />;
+            case
+                'Quản lý phản hồi':
+                return <FeedbackManagement />;
             case 'Cài đặt':
                 return (
                     <KnowledgeUpload />
@@ -71,7 +75,7 @@ const AdminDashboard = () => {
             <div className="w-72 bg-gradient-to-b from-blue-600 to-indigo-700 shadow-lg p-5 flex flex-col text-white">
                 <h2 className="text-3xl font-bold mb-6">HealthSync</h2>
                 <ul className="space-y-4">
-                    {['Dashboard', 'Quản lý người dùng', 'Quản lý chatbot', 'Cài đặt'].map((page) => (
+                    {['Dashboard', 'Quản lý người dùng', 'Quản lý chatbot', 'Quản lý phản hồi', 'Cài đặt'].map((page) => (
                         <li
                             key={page}
                             className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-300 ${activePage === page ? 'bg-white text-blue-600 shadow-lg' : 'hover:bg-blue-500'}`}
@@ -80,6 +84,7 @@ const AdminDashboard = () => {
                             {page === 'Dashboard' && <FaChartPie className="text-xl" />}
                             {page === 'Quản lý người dùng' && <FaUser className="text-xl" />}
                             {page === 'Quản lý chatbot' && <FaRobot className="text-xl" />}
+                            {page === 'Quản lý phản hồi' && <FaCommentAlt className="text-xl" />}
                             {page === 'Cài đặt' && <FaCog className="text-xl" />}
                             <span className="text-lg font-semibold">{page}</span>
                         </li>
